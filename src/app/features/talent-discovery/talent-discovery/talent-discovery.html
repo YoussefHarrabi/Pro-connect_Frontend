@@ -1,0 +1,475 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header Navigation -->
+  <header class="bg-white shadow-sm border-b sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-4">
+          <h1 class="text-2xl font-bold text-gray-900">{{ 'appName' | translate }}</h1>
+          <span class="text-sm text-gray-500">|</span>
+          <span class="text-lg font-medium text-gray-700">{{ 'talentDiscovery.title' | translate }}</span>
+        </div>
+        
+        
+        <div class="flex items-center space-x-4">
+          <!-- Language Toggle -->
+        
+
+          <!-- View Toggle -->
+          <div class="flex bg-gray-100 rounded-lg p-1">
+            <button
+              (click)="switchView('search')"
+              [class]="activeView === 'search' 
+                ? 'bg-white text-primary-600 shadow-sm px-3 py-1 rounded-md text-sm font-medium'
+                : 'text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md text-sm font-medium'"
+            >
+              {{ 'talentDiscovery.search.label' | translate }}
+            </button>
+            <button
+              (click)="switchView('shortlist')"
+              [class]="activeView === 'shortlist' 
+                ? 'bg-white text-primary-600 shadow-sm px-3 py-1 rounded-md text-sm font-medium'
+                : 'text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md text-sm font-medium'"
+            >
+              {{ 'talentDiscovery.shortlist.label' | translate }} ({{ shortlistedTalents.length }})
+            </button>
+          </div>
+          
+          <!-- Navigation Links -->
+          <a routerLink="/profile" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            {{ 'profile' | translate }}
+          </a>
+          <button class="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200">
+            {{ 'logout' | translate }}
+          </button>
+        </div>
+          <div class="flex bg-green-500 rounded-full p-1">
+            <button
+              (click)="toggleLanguage()"
+              [class]="translate.currentLang === 'en' 
+                ? 'bg-white text-green-500 shadow-sm px-3 py-1 rounded-full text-sm font-medium'
+                : 'text-white hover:text-orange-100 px-3 py-1 rounded-full text-sm font-medium'"
+            >
+              EN
+            </button>
+            <button
+              (click)="toggleLanguage()"
+              [class]="translate.currentLang === 'fr' 
+                ? 'bg-white text-green-500 shadow-sm px-3 py-1 rounded-full text-sm font-medium'
+                : 'text-white hover:text-orange-100 px-3 py-1 rounded-full text-sm font-medium'"
+            >
+              FR
+            </button>
+          </div>
+      </div>
+      
+    </div>
+    
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Search Section -->
+    <div *ngIf="activeView === 'search'" class="mb-8">
+      <form [formGroup]="searchForm" class="space-y-6">
+        
+        <!-- Search Bar -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+          <div class="flex items-center space-x-4">
+            <div class="flex-1">
+              <div class="relative">
+                <input
+                  type="text"
+                  formControlName="keyword"
+                  [placeholder]="'talentDiscovery.search.placeholder' | translate"
+                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Filter Toggle -->
+            <button
+              type="button"
+              (click)="toggleFilters()"
+              class="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 flex items-center space-x-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+              </svg>
+              <span>{{ 'talentDiscovery.filters.title' | translate }}</span>
+              <span *ngIf="getSelectedFiltersCount() > 0" class="bg-primary-600 text-white rounded-full px-2 py-1 text-xs">
+                {{ getSelectedFiltersCount() }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Filters -->
+        <div *ngIf="showFilters" class="bg-white rounded-xl shadow-sm border p-6 space-y-6" [@slideDown]>
+          
+          <!-- Talent Type Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">{{ 'talentDiscovery.filters.talentType' | translate }}</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                *ngFor="let type of talentTypeOptions"
+                type="button"
+                (click)="toggleTalentType(type.value)"
+                [class]="(searchForm.get('talentTypes')?.value || []).includes(type.value)
+                  ? 'bg-primary-100 border-primary-500 text-primary-700'
+                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'"
+                class="px-3 py-2 border rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-2"
+              >
+                <span>{{ type.icon }}</span>
+                <span>{{ type.label | translate }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Skills Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">{{ 'talentDiscovery.filters.skills' | translate }}</label>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-32 overflow-y-auto">
+              <button
+                *ngFor="let skill of availableSkills"
+                type="button"
+                (click)="toggleSkill(skill)"
+                [class]="selectedSkills.includes(skill)
+                  ? 'bg-primary-100 border-primary-500 text-primary-700'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'"
+                class="px-2 py-1 border rounded text-xs font-medium transition-colors duration-200"
+              >
+                {{ skill }}
+              </button>
+            </div>
+            <div *ngIf="selectedSkills.length > 0" class="mt-2">
+              <span class="text-xs text-gray-500">{{ 'talentDiscovery.filters.selected' | translate }}: </span>
+              <span *ngFor="let skill of selectedSkills; let last = last" class="text-xs text-primary-600">
+                {{ skill }}<span *ngIf="!last">, </span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Availability Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">{{ 'talentDiscovery.filters.availability' | translate }}</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                *ngFor="let availability of availabilityOptions"
+                type="button"
+                (click)="toggleAvailability(availability.value)"
+                [class]="(searchForm.get('availability')?.value || []).includes(availability.value)
+                  ? 'ring-2 ring-primary-500 ' + availability.color
+                  : availability.color + ' hover:ring-2 hover:ring-gray-300'"
+                class="px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
+              >
+                {{ availability.label | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Rating and Other Filters -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Minimum Rating -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ 'talentDiscovery.filters.minRating' | translate }}</label>
+              <select formControlName="minRating" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option *ngFor="let rating of ratingOptions" [value]="rating.value">
+                  {{ rating.label | translate }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Hourly Rate Range -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ 'talentDiscovery.filters.minRate' | translate }}</label>
+              <input
+                type="number"
+                formControlName="minHourlyRate"
+                placeholder="0"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ 'talentDiscovery.filters.maxRate' | translate }}</label>
+              <input
+                type="number"
+                formControlName="maxHourlyRate"
+                placeholder="500"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
+          <!-- Verified Only & Location -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex items-center">
+              <input
+                id="verifiedOnly"
+                type="checkbox"
+                formControlName="verifiedOnly"
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label for="verifiedOnly" class="ml-2 block text-sm text-gray-700">
+                {{ 'talentDiscovery.filters.verifiedOnly' | translate }}
+              </label>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                formControlName="location"
+                [placeholder]="'talentDiscovery.filters.locationPlaceholder' | translate"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
+          <!-- Filter Actions -->
+          <div class="flex justify-between items-center pt-4 border-t">
+            <button
+              type="button"
+              (click)="clearFilters()"
+              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              {{ 'talentDiscovery.filters.clear' | translate }}
+            </button>
+            <span class="text-sm text-gray-500">
+              {{ talents.length }} {{ 'talentDiscovery.talentsFound' | translate }}
+            </span>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Results Section -->
+    <div class="space-y-6">
+      
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+
+      <!-- Results Header -->
+      <div *ngIf="!isLoading" class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+          <h2 class="text-xl font-semibold text-gray-900">
+            {{ activeView === 'search' ? ('talentDiscovery.search.results' | translate) : ('talentDiscovery.shortlist.title' | translate) }}
+          </h2>
+          <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
+            {{ talents.length }} {{ (talents.length === 1 ? 'talentDiscovery.talent' : 'talentDiscovery.talents') | translate }}
+          </span>
+        </div>
+        
+        <div *ngIf="activeView === 'search'" class="text-sm text-gray-500">
+          {{ 'talentDiscovery.pagination.showing' | translate }} {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, talents.length) }} {{ 'talentDiscovery.pagination.of' | translate }} {{ talents.length }}
+        </div>
+      </div>
+
+      <!-- Talent Cards Grid -->
+      <div *ngIf="!isLoading && filteredTalents.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          *ngFor="let talent of filteredTalents"
+          class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden"
+        >
+          <!-- Card Header -->
+          <div class="p-6 pb-4">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="relative">
+                  <img
+                    [src]="talent.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face'"
+                    [alt]="talent.firstName + ' ' + talent.lastName"
+                    class="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div *ngIf="talent.isVerified" 
+                       class="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1"
+                       [title]="'talentDiscovery.talent.verified' | translate">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                </div>
+                
+                <div class="flex-1">
+                  <div class="flex items-center space-x-2">
+                    <h3 class="font-semibold text-gray-900">{{ talent.firstName }} {{ talent.lastName }}</h3>
+                    <span *ngIf="talent.talentType === 'service_company'" class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      {{ 'talentDiscovery.talent.company' | translate }}
+                    </span>
+                  </div>
+                  <p class="text-sm text-gray-600">@{{ talent.username }}</p>
+                </div>
+              </div>
+              
+              <!-- Shortlist Button -->
+              <button
+                (click)="toggleShortlist(talent)"
+                [class]="isInShortlist(talent.id)
+                  ? 'text-red-500 hover:text-red-700'
+                  : 'text-gray-400 hover:text-red-500'"
+                class="transition-colors duration-200"
+                [title]="(isInShortlist(talent.id) ? 'talentDiscovery.shortlist.remove' : 'talentDiscovery.shortlist.add') | translate"
+              >
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Title -->
+            <h4 class="text-lg font-medium text-gray-900 mb-2">{{ talent.title }}</h4>
+            
+            <!-- Company Name for Service Companies -->
+            <p *ngIf="talent.companyName" class="text-sm text-primary-600 font-medium mb-2">
+              {{ talent.companyName }}
+              <span *ngIf="talent.teamSize" class="text-gray-500">• {{ talent.teamSize }} {{ 'talentDiscovery.talent.teamMembers' | translate }}</span>
+            </p>
+
+            <!-- Bio -->
+            <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ talent.bio }}</p>
+
+            <!-- Rating and Stats -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <div class="flex items-center">
+                  <svg *ngFor="let star of getStarArray(talent.rating); let i = index"
+                       class="w-4 h-4"
+                       [class.text-yellow-400]="star === 1"
+                       [class.text-gray-300]="star === 0"
+                       fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                </div>
+                <span class="text-sm text-gray-600">{{ talent.rating }} ({{ talent.totalReviews }})</span>
+              </div>
+              
+              <div class="flex items-center space-x-4 text-xs text-gray-500">
+                <span>{{ talent.completedProjects }} {{ 'talentDiscovery.talent.projects' | translate }}</span>
+                <span>{{ talent.portfolioCount }} {{ 'talentDiscovery.talent.portfolio' | translate }}</span>
+              </div>
+            </div>
+
+            <!-- Availability and Rate -->
+            <div class="flex items-center justify-between mb-4">
+              <span [class]="'px-2 py-1 rounded-full text-xs font-medium ' + getAvailabilityColor(talent.availability)">
+                {{ getAvailabilityLabel(talent.availability) }}
+              </span>
+              
+              <div *ngIf="talent.hourlyRate" class="text-right">
+                <p class="text-lg font-bold text-gray-900">
+                  ${{ talent.hourlyRate }}/{{ 'talentDiscovery.talent.hourlyRate' | translate }}
+                </p>
+                <p class="text-xs text-gray-500">{{ talent.responseTime }}</p>
+              </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="mb-4">
+              <div class="flex flex-wrap gap-1">
+                <span
+                  *ngFor="let skill of talent.skills.slice(0, 4)"
+                  class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
+                >
+                  {{ skill }}
+                </span>
+                <span *ngIf="talent.skills.length > 4" class="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
+                  +{{ talent.skills.length - 4 }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Location and Last Active -->
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+              <span>📍 {{ talent.location }}</span>
+              <span>{{ 'talentDiscovery.talent.active' | translate }} {{ formatDate(talent.lastActive) }}</span>
+            </div>
+          </div>
+
+          <!-- Card Actions -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+            <div class="flex space-x-2">
+              <button
+                (click)="viewTalentProfile(talent)"
+                class="flex-1 px-3 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+              >
+                {{ 'talentDiscovery.talent.viewProfile' | translate }}
+              </button>
+              <button
+                (click)="contactTalent(talent)"
+                class="flex-1 px-3 py-2 text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 rounded-lg transition-colors duration-200"
+              >
+                {{ 'talentDiscovery.talent.contact' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && filteredTalents.length === 0" class="text-center py-12">
+        <div class="mb-4">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">
+          {{ (activeView === 'search' ? 'talentDiscovery.search.noResults' : 'talentDiscovery.shortlist.empty') | translate }}
+        </h3>
+        <p class="text-gray-500 mb-4">
+          {{ (activeView === 'search' ? 'talentDiscovery.search.adjustFilters' : 'talentDiscovery.shortlist.startAdding') | translate }}
+        </p>
+        <button
+          *ngIf="activeView === 'search'"
+          (click)="clearFilters()"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+        >
+          {{ 'talentDiscovery.filters.clear' | translate }}
+        </button>
+        <button
+          *ngIf="activeView === 'shortlist'"
+          (click)="switchView('search')"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+        >
+          {{ 'talentDiscovery.search.browseTalents' | translate }}
+        </button>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="!isLoading && filteredTalents.length > 0 && totalPages > 1" class="flex justify-center">
+        <nav class="flex items-center space-x-2">
+          <button
+            (click)="goToPage(currentPage - 1)"
+            [disabled]="currentPage === 1"
+            class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ 'talentDiscovery.pagination.previous' | translate }}
+          </button>
+          
+          <button
+            *ngFor="let page of getPaginationArray()"
+            (click)="goToPage(page)"
+            [class]="page === currentPage 
+              ? 'px-3 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg'
+              : 'px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg'"
+          >
+            {{ page }}
+          </button>
+          
+          <button
+            (click)="goToPage(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+            class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ 'talentDiscovery.pagination.next' | translate }}
+          </button>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
