@@ -1,0 +1,279 @@
+<div class="file-manager">
+  <!-- Header -->
+  <div class="file-manager-header bg-white border-b border-gray-200 px-6 py-4">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+      
+      <!-- Title and Stats -->
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ 'workspace.files.title' | translate }}</h2>
+        <div class="flex items-center space-x-4 text-sm text-gray-500">
+          <span>{{ files.length }} {{ 'workspace.files.filesCount' | translate }}</span>
+          <span>{{ getTotalFileSize() }} {{ 'workspace.files.totalSize' | translate }}</span>
+        </div>
+      </div>
+
+      <!-- Upload Button -->
+      <div class="flex items-center space-x-3">
+        <label for="file-upload" class="cursor-pointer inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          {{ 'workspace.files.upload' | translate }}
+        </label>
+        <input
+          id="file-upload"
+          type="file"
+          multiple
+          class="hidden"
+          (change)="onFileSelected($event)"
+          accept="*/*"
+        />
+      </div>
+    </div>
+
+    <!-- Filters and Controls -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mt-6 space-y-4 lg:space-y-0">
+      
+      <!-- Search and Filters -->
+      <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+        <!-- Search -->
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            [placeholder]="'workspace.files.search' | translate"
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-64"
+          />
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Type Filter -->
+        <select [(ngModel)]="filterType" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+          <option value="all">{{ 'workspace.files.allTypes' | translate }}</option>
+          <option value="images">{{ 'workspace.files.images' | translate }}</option>
+          <option value="documents">{{ 'workspace.files.documents' | translate }}</option>
+          <option value="archives">{{ 'workspace.files.archives' | translate }}</option>
+        </select>
+      </div>
+
+      <!-- View Controls -->
+      <div class="flex items-center space-x-4">
+        <!-- Sort -->
+        <div class="flex items-center space-x-2">
+          <span class="text-sm text-gray-500">{{ 'workspace.files.sortBy' | translate }}:</span>
+          <select [(ngModel)]="sortBy" class="border border-gray-300 rounded px-2 py-1 text-sm">
+            <option value="date">{{ 'workspace.files.date' | translate }}</option>
+            <option value="name">{{ 'workspace.files.name' | translate }}</option>
+            <option value="size">{{ 'workspace.files.size' | translate }}</option>
+            <option value="type">{{ 'workspace.files.type' | translate }}</option>
+          </select>
+          <button (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'" class="p-1 text-gray-400 hover:text-gray-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getSortIcon(sortBy)"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- View Mode Toggle -->
+        <div class="flex items-center bg-gray-100 rounded-lg p-1">
+          <button
+            (click)="viewMode = 'grid'"
+            [class]="viewMode === 'grid' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'"
+            class="p-2 rounded-md transition-colors duration-200"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+            </svg>
+          </button>
+          <button
+            (click)="viewMode = 'list'"
+            [class]="viewMode === 'list' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'"
+            class="p-2 rounded-md transition-colors duration-200"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- File Statistics -->
+  <div class="file-stats bg-gray-50 border-b border-gray-200 px-6 py-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="text-center">
+        <div class="text-2xl font-bold text-green-600">{{ getFilesByType()['images'] }}</div>
+        <div class="text-sm text-gray-500">{{ 'workspace.files.images' | translate }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-blue-600">{{ getFilesByType()['documents'] }}</div>
+        <div class="text-sm text-gray-500">{{ 'workspace.files.documents' | translate }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-purple-600">{{ getFilesByType()['archives'] }}</div>
+        <div class="text-sm text-gray-500">{{ 'workspace.files.archives' | translate }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-gray-600">{{ getFilesByType()['others'] }}</div>
+        <div class="text-sm text-gray-500">{{ 'workspace.files.others' | translate }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Files Content -->
+  <div class="files-content flex-1 overflow-y-auto px-6 py-6">
+    
+    <!-- Empty State -->
+    <div *ngIf="filteredFiles.length === 0" class="empty-state text-center py-12">
+      <div class="mb-4">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+        </svg>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">{{ 'workspace.files.noFiles' | translate }}</h3>
+      <p class="text-gray-500 mb-4">{{ 'workspace.files.uploadFirst' | translate }}</p>
+    </div>
+
+    <!-- Grid View -->
+    <div *ngIf="viewMode === 'grid' && filteredFiles.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      <div
+        *ngFor="let file of filteredFiles"
+        class="file-card bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
+      >
+        <!-- File Preview -->
+        <div class="file-preview mb-3 flex justify-center">
+          <div *ngIf="isImageFile(file)" class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+            <img [src]="file.url" [alt]="file.name" class="w-full h-full object-cover" />
+          </div>
+          <div *ngIf="!isImageFile(file)" [class]="'w-16 h-16 rounded-lg flex items-center justify-center ' + getFileTypeColor(file)">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getFileIcon(file)"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- File Info -->
+        <div class="file-info text-center">
+          <h3 class="text-sm font-medium text-gray-900 truncate mb-1" [title]="file.name">{{ file.name }}</h3>
+          <p class="text-xs text-gray-500 mb-2">{{ formatFileSize(file.size) }}</p>
+          <p class="text-xs text-gray-400">{{ file.uploadedBy }}</p>
+        </div>
+
+        <!-- File Actions -->
+        <div class="file-actions flex justify-center space-x-2 mt-3">
+          <button
+            (click)="downloadFile(file)"
+            class="p-1 text-gray-400 hover:text-blue-600 transition-colors duration-200"
+            [title]="'workspace.files.download' | translate"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </button>
+          <button
+            *ngIf="canDeleteFile(file)"
+            (click)="deleteFile(file)"
+            class="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200"
+            [title]="'workspace.files.delete' | translate"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div *ngIf="viewMode === 'list' && filteredFiles.length > 0" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" (click)="setSortBy('name')">
+              {{ 'workspace.files.name' | translate }}
+              <svg *ngIf="sortBy === 'name'" class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getSortIcon('name')"></path>
+              </svg>
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" (click)="setSortBy('size')">
+              {{ 'workspace.files.size' | translate }}
+              <svg *ngIf="sortBy === 'size'" class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getSortIcon('size')"></path>
+              </svg>
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {{ 'workspace.files.uploadedBy' | translate }}
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" (click)="setSortBy('date')">
+              {{ 'workspace.files.date' | translate }}
+              <svg *ngIf="sortBy === 'date'" class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getSortIcon('date')"></path>
+              </svg>
+            </th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {{ 'workspace.files.actions' | translate }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let file of filteredFiles" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 w-8 h-8">
+                  <div *ngIf="isImageFile(file)" class="w-8 h-8 rounded overflow-hidden">
+                    <img [src]="file.url" [alt]="file.name" class="w-full h-full object-cover" />
+                  </div>
+                  <div *ngIf="!isImageFile(file)" [class]="'w-8 h-8 rounded flex items-center justify-center ' + getFileTypeColor(file)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getFileIcon(file)"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900">{{ file.name }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ formatFileSize(file.size) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ file.uploadedBy }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ formatDate(file.uploadedAt) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div class="flex justify-end space-x-2">
+                <button
+                  (click)="downloadFile(file)"
+                  class="p-1 text-gray-400 hover:text-blue-600 transition-colors duration-200"
+                  [title]="'workspace.files.download' | translate"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </button>
+                <button
+                  *ngIf="canDeleteFile(file)"
+                  (click)="deleteFile(file)"
+                  class="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200"
+                  [title]="'workspace.files.delete' | translate"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

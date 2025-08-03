@@ -1,0 +1,160 @@
+<div class="workspace-chat h-full flex flex-col">
+  <!-- Chat Header -->
+  <div class="chat-header bg-white border-b border-gray-200 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-900">{{ 'workspace.chat.title' | translate }}</h2>
+        <p class="text-sm text-gray-500">
+          {{ currentUserRole === 'client' ? 'Sarah Johnson' : 'John Smith' }}
+          <span class="ml-2 inline-flex items-center">
+            <div class="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+            {{ 'workspace.chat.online' | translate }}
+          </span>
+        </p>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+          </svg>
+        </button>
+        <button class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages Container -->
+  <div #messagesContainer class="messages-container flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <div *ngFor="let message of messages; let i = index">
+      
+      <!-- Date Separator -->
+      <div *ngIf="shouldShowDateSeparator(message, i > 0 ? messages[i-1] : null)" 
+           class="date-separator flex items-center justify-center my-4">
+        <div class="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
+          {{ formatDate(message.timestamp) }}
+        </div>
+      </div>
+
+      <!-- Message -->
+      <div [class]="'message flex ' + (isMyMessage(message) ? 'justify-end' : 'justify-start')">
+        <div [class]="'message-bubble max-w-xs lg:max-w-md px-4 py-2 rounded-lg ' + 
+                     (isMyMessage(message) ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900')">
+          
+          <!-- Sender Name (for other person's messages) -->
+          <div *ngIf="!isMyMessage(message)" class="text-xs text-gray-500 mb-1">
+            {{ message.sender }}
+          </div>
+
+          <!-- Message Content -->
+          <div class="message-content">
+            <p class="text-sm">{{ message.content }}</p>
+          </div>
+
+          <!-- Attachments -->
+          <div *ngIf="message.attachments && message.attachments.length > 0" class="attachments mt-2 space-y-2">
+            <div *ngFor="let attachment of message.attachments" 
+                 class="attachment flex items-center space-x-2 p-2 rounded bg-black bg-opacity-10">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getFileIcon(attachment.type)"></path>
+              </svg>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium truncate">{{ attachment.name }}</p>
+                <p class="text-xs opacity-75">{{ formatFileSize(attachment.size) }}</p>
+              </div>
+              <button class="text-xs underline hover:no-underline">
+                {{ 'workspace.download' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Timestamp -->
+          <div [class]="'text-xs mt-1 ' + (isMyMessage(message) ? 'text-primary-100' : 'text-gray-500')">
+            {{ formatTime(message.timestamp) }}
+            <span *ngIf="isMyMessage(message) && message.isRead" class="ml-1">✓✓</span>
+            <span *ngIf="isMyMessage(message) && !message.isRead" class="ml-1">✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Indicator -->
+    <div *ngIf="isTyping" class="typing-indicator flex justify-start">
+      <div class="bg-gray-100 rounded-lg px-4 py-2">
+        <div class="flex space-x-1">
+          <div class="typing-dot bg-gray-400 rounded-full w-2 h-2 animate-bounce"></div>
+          <div class="typing-dot bg-gray-400 rounded-full w-2 h-2 animate-bounce" style="animation-delay: 0.1s"></div>
+          <div class="typing-dot bg-gray-400 rounded-full w-2 h-2 animate-bounce" style="animation-delay: 0.2s"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected Files Preview -->
+  <div *ngIf="selectedFiles.length > 0" class="selected-files bg-gray-50 border-t border-gray-200 px-6 py-2">
+    <div class="flex flex-wrap gap-2">
+      <div *ngFor="let file of selectedFiles; let i = index" 
+           class="flex items-center space-x-2 bg-white rounded-lg px-3 py-1 border">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getFileIcon(file.type)"></path>
+        </svg>
+        <span class="text-sm text-gray-700 truncate max-w-24">{{ file.name }}</span>
+        <button (click)="removeFile(i)" class="text-red-500 hover:text-red-700">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Input -->
+  <div class="message-input bg-white border-t border-gray-200 px-6 py-4">
+    <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" class="flex items-end space-x-4">
+      
+      <!-- File Upload Button -->
+      <div class="flex-shrink-0">
+        <label for="file-upload" class="cursor-pointer p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+          </svg>
+        </label>
+        <input
+          id="file-upload"
+          type="file"
+          multiple
+          class="hidden"
+          (change)="onFileSelected($event)"
+          accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+        />
+      </div>
+
+      <!-- Text Input -->
+      <div class="flex-1">
+        <textarea
+          formControlName="content"
+          rows="1"
+          class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+          [placeholder]="'workspace.chat.typePlaceholder' | translate"
+          (keydown.enter)="handleEnterKey($any($event))"
+        ></textarea>
+      </div>
+
+      <!-- Send Button -->
+      <div class="flex-shrink-0">
+        <button
+          type="submit"
+          [disabled]="!messageForm.valid"
+          class="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+          </svg>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

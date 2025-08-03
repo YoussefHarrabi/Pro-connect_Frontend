@@ -1,0 +1,407 @@
+// Chatbot Component Styles
+.chatbot-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+// Chat Header Styles
+.chat-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 0.5rem 0.5rem 0 0;
+  
+  .ai-avatar {
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+  
+  .language-switch {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+  
+  .clear-chat-btn {
+    background: rgba(239, 68, 68, 0.2);
+    color: white;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    
+    &:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+  }
+}
+
+// Messages Container Styles
+.messages-container {
+  background: white;
+  height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f3f4f6;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #9ca3af;
+    }
+  }
+}
+
+// Message Styles
+.message {
+  margin-bottom: 1rem;
+  
+  &.user-message {
+    display: flex;
+    justify-content: flex-end;
+    
+    .message-bubble {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border-radius: 1rem 1rem 0.25rem 1rem;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+      animation: slideInRight 0.3s ease-out;
+    }
+  }
+  
+  &.bot-message {
+    display: flex;
+    justify-content: flex-start;
+    
+    .message-bubble {
+      background: #f3f4f6;
+      color: #374151;
+      border-radius: 1rem 1rem 1rem 0.25rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      animation: slideInLeft 0.3s ease-out;
+    }
+  }
+  
+  .message-bubble {
+    max-width: 20rem;
+    padding: 0.75rem 1rem;
+    word-wrap: break-word;
+    
+    .message-text {
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+    
+    .message-time {
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      opacity: 0.7;
+    }
+  }
+}
+
+// Typing Indicator Styles
+.typing-indicator {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+  
+  .typing-bubble {
+    background: #f3f4f6;
+    border-radius: 1rem 1rem 1rem 0.25rem;
+    padding: 0.75rem 1rem;
+    
+    .typing-dots {
+      display: flex;
+      gap: 0.25rem;
+      
+      .dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        background: #9ca3af;
+        border-radius: 50%;
+        animation: typing 1.4s ease-in-out infinite;
+        
+        &:nth-child(1) { animation-delay: 0s; }
+        &:nth-child(2) { animation-delay: 0.2s; }
+        &:nth-child(3) { animation-delay: 0.4s; }
+      }
+    }
+  }
+}
+
+// Chat Input Styles
+.chat-input {
+  background: white;
+  border-radius: 0 0 0.5rem 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  
+  .input-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    
+    textarea {
+      flex: 1;
+      resize: none;
+      border: 2px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      
+      &:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      }
+      
+      &::placeholder {
+        color: #9ca3af;
+      }
+    }
+    
+    .send-button {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 3rem;
+      height: 3rem;
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+      
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
+      svg {
+        transition: transform 0.2s ease;
+      }
+      
+      &:hover:not(:disabled) svg {
+        transform: rotate(45deg);
+      }
+    }
+  }
+}
+
+// Quick Actions Styles
+.quick-actions {
+  .action-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    
+    &:hover {
+      border-color: #10b981;
+      background: #f0fdf4;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    }
+    
+    .action-icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &.project { background: #dbeafe; }
+      &.freelancer { background: #dcfce7; }
+      &.budget { background: #fef3c7; }
+    }
+    
+    .action-title {
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.25rem;
+    }
+    
+    .action-description {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+  }
+}
+
+// Features Info Styles
+.features-info {
+  background: linear-gradient(135deg, #f0fdf4, #eff6ff);
+  border: 1px solid #d1fae5;
+  border-radius: 0.75rem;
+  
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    
+    .feature-icon {
+      color: #10b981;
+      flex-shrink: 0;
+    }
+    
+    .feature-text {
+      color: #374151;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+// Animations
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-0.75rem);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+    transform: translate3d(0, -10px, 0);
+  }
+  70% {
+    animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+    transform: translate3d(0, -5px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .messages-container {
+    height: 300px;
+  }
+  
+  .message .message-bubble {
+    max-width: 16rem;
+  }
+  
+  .quick-actions {
+    .action-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .features-info {
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .chat-input .input-container {
+    flex-direction: column;
+    gap: 0.75rem;
+    
+    .send-button {
+      align-self: flex-end;
+      width: auto;
+      min-width: auto;
+      padding: 0.75rem 2rem;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .chat-header {
+    .header-content {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+    
+    .header-actions {
+      justify-content: center;
+    }
+  }
+}
+
+// Dark mode support (if needed)
+@media (prefers-color-scheme: dark) {
+  .chatbot-container {
+    background-color: #111827;
+  }
+  
+  .messages-container {
+    background: #1f2937;
+  }
+  
+  .message.bot-message .message-bubble {
+    background: #374151;
+    color: #f3f4f6;
+  }
+  
+  .quick-actions .action-card {
+    background: #1f2937;
+    border-color: #374151;
+    
+    &:hover {
+      background: #065f46;
+      border-color: #10b981;
+    }
+  }
+  
+  .features-info {
+    background: linear-gradient(135deg, #065f46, #1e3a8a);
+    border-color: #10b981;
+  }
+}

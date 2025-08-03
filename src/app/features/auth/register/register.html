@@ -376,9 +376,9 @@
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="space-y-1">
-                  <label for="hourlyRate" class="text-sm font-medium text-gray-700 block">
-                    Hourly Rate (USD) *
-                  </label>
+                 <label for="hourlyRate" class="text-sm font-medium text-gray-700 block">
+    Hourly Rate (EUR) *
+</label>
                   <input
                     id="hourlyRate"
                     type="number"
@@ -493,18 +493,18 @@
                   <label for="projectBudgetRange" class="text-sm font-medium text-gray-700 block">
                     Typical Project Budget *
                   </label>
-                  <select
-                    id="projectBudgetRange"
-                    formControlName="projectBudgetRange"
-                    [class]="isFieldInvalid('projectBudgetRange') ? 'input-field input-error' : 'input-field'"
+                                <select
+                      id="projectBudgetRange"
+                      formControlName="projectBudgetRange"
+                      [class]="isFieldInvalid('projectBudgetRange') ? 'input-field input-error' : 'input-field'"
                   >
-                    <option value="">Select budget range</option>
-                    <option value="under-5k">Under $5,000</option>
-                    <option value="5k-15k">$5,000 - $15,000</option>
-                    <option value="15k-50k">$15,000 - $50,000</option>
-                    <option value="50k-100k">$50,000 - $100,000</option>
-                    <option value="100k-250k">$100,000 - $250,000</option>
-                    <option value="over-250k">Over $250,000</option>
+                      <option value="">Select budget range</option>
+                      <option value="under-5k">Under €5,000</option>
+                      <option value="5k-15k">€5,000 - €15,000</option>
+                      <option value="15k-50k">€15,000 - €50,000</option>
+                      <option value="50k-100k">€50,000 - €100,000</option>
+                      <option value="100k-250k">€100,000 - €250,000</option>
+                      <option value="over-250k">Over €250,000</option>
                   </select>
                   <div *ngIf="isFieldInvalid('projectBudgetRange')" class="text-red-500 text-xs">
                     {{ getErrorMessage('projectBudgetRange') }}

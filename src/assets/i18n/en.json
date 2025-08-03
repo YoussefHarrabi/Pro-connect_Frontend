@@ -1,6 +1,151 @@
 {
   "logout": "Logout",
   "profile": "Profile",
+  "navbar": {
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "footer": {
+    "company": {
+      "title": "Company",
+      "aboutUs": "About Us",
+      "feedback": "Feedback",
+      "trust": "Trust, Safety & Security"
+    },
+    "support": {
+      "title": "Help & Support",
+      "help": "Help & Support",
+      "foundation": "Pro-Connect Foundation",
+      "terms": "Terms of Service"
+    },
+    "legal": {
+      "title": "Legal",
+      "privacy": "Privacy Policy",
+      "cookies": "Cookie Policy",
+      "accessibility": "Accessibility"
+    },
+    "resources": {
+      "title": "Resources",
+      "desktop": "Desktop App",
+      "enterprise": "Enterprise Solutions",
+      "releases": "Release Notes"
+    },
+    "followUs": "Follow Us",
+    "mobileApp": "Mobile app", 
+    "downloadOn": "Download on the",
+    "getItOn": "GET IT ON",
+    "copyright": "ProConnect. All rights reserved."
+  },
+  "workspace": {
+    "navbar": {
+      "overview": "Overview",
+      "tasks": "Tasks", 
+      "chat": "Chat",
+      "files": "Files"
+    },
+    "status": {
+      "active": "Active",
+      "completed": "Completed", 
+      "archived": "Archived",
+      "todo": "To Do",
+      "inprogress": "In Progress",
+      "inreview": "In Review", 
+      "done": "Done"
+    },
+    "client": "Client",
+    "freelancer": "Freelancer",
+    "budget": "Budget", 
+    "progress": "Progress",
+    "completeProject": "Complete Project",
+    "tabs": {
+      "overview": "Overview",
+      "tasks": "Tasks",
+      "chat": "Chat", 
+      "files": "Files"
+    },
+    "overview": {
+      "recentActivity": "Recent Activity",
+      "taskSummary": "Task Summary", 
+      "timeline": "Project Timeline",
+      "startDate": "Start Date",
+      "deadline": "Deadline",
+      "daysRemaining": "Days Remaining",
+      "quickStats": "Quick Stats",
+      "totalFiles": "Total Files", 
+      "totalMessages": "Total Messages",
+      "unreadMessages": "Unread Messages"
+    },
+    "kanban": {
+      "title": "Task Management Board",
+      "todo": "To Do",
+      "inProgress": "In Progress", 
+      "inReview": "In Review",
+      "done": "Done",
+      "addTask": "Add Task",
+      "newTask": "New Task",
+      "taskTitle": "Task Title",
+      "taskTitlePlaceholder": "Enter task title...",
+      "taskDescription": "Description", 
+      "taskDescriptionPlaceholder": "Describe the task...",
+      "priority": "Priority",
+      "dueDate": "Due Date", 
+      "assignee": "Assignee",
+      "createTask": "Create Task",
+      "description": "Description"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "attachments": "Attachments",
+    "comments": "Comments", 
+    "addComment": "Add a comment...",
+    "postComment": "Post",
+    "chat": {
+      "title": "Project Chat",
+      "online": "Online", 
+      "typePlaceholder": "Type a message..."
+    },
+    "download": "Download",
+    "files": {
+      "title": "Project Files", 
+      "filesCount": "files",
+      "totalSize": "total",
+      "upload": "Upload Files",
+      "search": "Search files...",
+      "allTypes": "All Types", 
+      "images": "Images",
+      "documents": "Documents", 
+      "archives": "Archives",
+      "others": "Others",
+      "sortBy": "Sort by",
+      "date": "Date", 
+      "name": "Name",
+      "size": "Size",
+      "type": "Type",
+      "uploadedBy": "Uploaded By",
+      "actions": "Actions", 
+      "noFiles": "No files uploaded yet",
+      "uploadFirst": "Upload your first file to get started.",
+      "download": "Download",
+      "delete": "Delete"
+    },
+    "completion": {
+      "title": "Complete Project", 
+      "notes": "Completion Notes",
+      "notesPlaceholder": "Add notes about the project completion...",
+      "rating": "Rate the Work",
+      "publicReview": "Public Review", 
+      "publicReviewPlaceholder": "Write a public review that will be visible on the freelancer's profile...",
+      "complete": "Complete Project",
+      "excellent": "Excellent", 
+      "good": "Good",
+      "average": "Average",
+      "belowAverage": "Below Average", 
+      "poor": "Poor"
+    }
+  },
   "overview": "Overview",
   "experience": "Experience",
   "portfolio": "Portfolio",
@@ -15,6 +160,8 @@
   "rating": "Rating",
   "totalReviews": "Reviews",
   "editProfile": "Edit Profile",
+  "contactTalent": "Contact Talent",  
+  "backToTalentDiscovery": "Back to Talent Discovery",
   "saveChanges": "Save Changes",
   "cancel": "Cancel",
   "available": "Available",
@@ -40,6 +187,92 @@
   "daysAgo": "{{days}} days ago",
   "confirmDelete": "Are you sure you want to delete this portfolio item?",
   "portfolioTitle": "Project Title",
+  "seePublicView": "See Public View",
+  "aiAssistant": "AI Assistant",
+  "aiAssistantDescription": "Your intelligent helper for project management and freelancer matching",
+  "clearChat": "Clear Chat",
+  "typeMessage": "Type your message...",
+  "quickActions": "Quick Actions",
+  "quickActionProject": "How do I post a project?",
+  "quickActionFreelancer": "Help me find the right freelancer",
+  "quickActionBudget": "What should my budget be?",
+  "postProject": "Post a Project",
+  "postProjectDescription": "Get help with project posting",
+  "findFreelancer": "Find Freelancer",
+  "findFreelancerDescription": "Match with the right talent",
+  "budgetHelp": "Budget Help",
+  "budgetHelpDescription": "Get pricing guidance",
+  "aiCapabilities": "AI Capabilities",
+  "bilingualSupport": "Bilingual Support (EN/FR)",
+  "projectMatching": "Smart Project Matching",
+  "budgetEstimation": "Budget Estimation",
+  "skillRecommendations": "Skill Recommendations",
+  "developer": "Developer",
+  "localTime": "local time",
+  "resume": "Resume",
+  "uploadResume": "Upload Resume",
+  "pdfOnly": "PDF files only",
+  "uploadedOn": "Uploaded on",
+  "download": "Download",
+  "remove": "Remove",
+  "hoursPerWeek": "Hours per week",
+  "moreThan30Hours": "More than 30 hrs/week",
+  "noContractPreference": "I am available to work anytime",
+  "languages": "Languages",
+  "fluent": "Fluent",
+  "verifications": "Verifications",
+  "idVerified": "ID Verified",
+  "published": "Published",
+  "drafts": "Drafts",
+  "workHistory": "Work History",
+  "noWorkHistory": "No work history yet",
+  "add": "Add",
+  "update": "Update",
+  "education": "Education",
+  "noEducation": "No education added yet",
+  "addEducation": "Add Education",
+  "editEducation": "Edit Education",
+  "degree": "Degree",
+  "institution": "Institution",
+  "startYear": "Start Year",
+  "endYear": "End Year",
+  "certifications": "Certifications",
+  "noCertifications": "No certifications added yet",
+  "addCertification": "Add Certification",
+  "editCertification": "Edit Certification",
+  "certificationName": "Certification Name",
+  "issuer": "Issuer",
+  "issueDate": "Issue Date",
+  "expiryDate": "Expiry Date",
+  "credentialId": "Credential ID",
+  "credentialUrl": "Credential URL",
+  "socialLinks": "Social Links",
+  "noSocialLinks": "No social links added yet",
+  "editSocialLinks": "Edit Social Links",
+  "personalWebsite": "Personal Website",
+  "projectTitle": "Project Title",
+  "imageUrl": "Image URL",
+  "technologies": "Technologies",
+  "separateWithCommas": "Separate with commas",
+  "editPortfolioItem": "Edit Portfolio Item",
+  "addPortfolioItem": "Add Portfolio Item",
+  "projectUrl": "Project URL",
+  "editWorkHistory": "Edit Work History",
+  "addWorkHistory": "Add Work History",
+  "jobTitle": "Job Title",
+  "company": "Company",
+  "startDate": "Start Date",
+  "endDate": "End Date",
+  "currentPosition": "Current Position",
+  "editSkills": "Edit Skills",
+  "enterSkillsPlaceholder": "Enter your skills, separated by commas...",
+  "separateSkillsWithCommas": "Separate skills with commas",
+  "currentSkills": "Current Skills",
+  "add": "Add",
+  "update": "Update",
+  "noLanguages": "No languages added yet",
+  "editLanguages": "Edit Languages",
+  "languagesHint": "Separate languages with commas",
   "appName": "Pro-Connect",
   "appSlogan": "Connect. Collaborate. Create.",
   "username": "Username",
@@ -68,8 +301,10 @@
   },
   "talentDiscovery": {
     "title": "Talent Discovery",
+    "navbar": {
+      "postProject": "Post Project"
+    },
     "talents": "talents",
-    "talent": "talent",
     "talentsFound": "talents found",
     "search": {
       "label": "Search Talents",
@@ -93,9 +328,8 @@
       "skills": "Skills",
       "selected": "Selected",
       "availability": "Availability",
-      "minRating": "Minimum Rating",
-      "minRate": "Min Rate ($/hr)",
-      "maxRate": "Max Rate ($/hr)",
+      "minRate": "Min Rate (€/hr)",
+      "maxRate": "Max Rate (€/hr)",
       "verifiedOnly": "Verified Profiles Only",
       "locationPlaceholder": "Location (e.g., Remote, New York)",
       "clear": "Clear All Filters"
@@ -109,13 +343,28 @@
       "hourlyRate": "hr",
       "active": "Active",
       "viewProfile": "View Profile",
-      "contact": "Contact"
+      "contact": "Contact",
+      "assignProject": "Assign Project"
     },
     "pagination": {
       "showing": "Showing",
       "of": "of",
       "previous": "Previous",
       "next": "Next"
+    },
+    "projectAssignment": {
+      "title": "Assign Project to Talent",
+      "selectProject": "Select Project",
+      "chooseProject": "Choose a project...",
+      "projectRequired": "Please select a project",
+      "message": "Message to Talent",
+      "messagePlaceholder": "Explain the project requirements and why you'd like this talent to work on it...",
+      "messageRequired": "Please provide a message",
+      "deadline": "Proposed Deadline",
+      "proposedBudget": "Proposed Budget (€)",
+      "budgetPlaceholder": "Optional budget proposal",
+      "assignProject": "Assign Project",
+      "successMessage": "Project assignment request sent to {{talentName}} for '{{projectTitle}}'"
     }
   },
   "talentTypes": {
@@ -132,5 +381,282 @@
     "yesterday": "Yesterday",
     "daysAgo": "{{days}} days ago",
     "weeksAgo": "{{weeks}} weeks ago"
+  },
+  "projectPosting": {
+    "title": "Post a Project",
+    "header": {
+      "title": "Post a Project",
+      "dashboard": "Dashboard"
+    },
+    "steps": {
+      "projectDetails": "Project Details",
+      "projectDetailsDesc": "Describe your project",
+      "budgetTimeline": "Budget & Timeline",
+      "budgetTimelineDesc": "Set your budget and timeline",
+      "additionalDetails": "Additional Details",
+      "additionalDetailsDesc": "Finalize project settings"
+    },
+    "form": {
+      "projectTitle": "Project Title",
+      "projectTitlePlaceholder": "e.g. Build a responsive e-commerce website with React",
+      "projectTitleHelp": "Choose a title that describes your project clearly",
+      "description": "Project Description",
+      "descriptionPlaceholder": "Describe your project in detail...",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "skills": "Required Skills",
+      "skillsPlaceholder": "Type skills and press Enter",
+      "projectType": "Project Type",
+      "fixed": "Fixed Price",
+      "hourly": "Hourly Rate",
+      "budget": "Budget",
+      "budgetMin": "Minimum Budget",
+      "budgetMax": "Maximum Budget",
+      "budgetNegotiable": "Budget is negotiable",
+      "timeline": "Timeline",
+      "timelinePlaceholder": "e.g., 2-3 weeks, 1 month",
+      "complexity": "Complexity Level",
+      "entry": "Entry Level",
+      "intermediate": "Intermediate",
+      "expert": "Expert",
+      "entryDesc": "Basic knowledge required",
+      "intermediateDesc": "Specialized knowledge needed",
+      "expertDesc": "Extensive experience required",
+      "preferredTalentType": "Preferred Talent Type",
+      "freelancer": "Freelancer",
+      "agency": "Agency",
+      "both": "Both",
+      "experienceLevel": "Experience Level",
+      "location": "Location",
+      "locationPlaceholder": "Project location (optional)",
+      "isRemote": "Remote work allowed",
+      "isUrgent": "This is an urgent project",
+      "isFeatured": "Feature this project",
+      "deadline": "Project Deadline",
+      "attachments": "Attachments",
+      "dragDrop": "Drag and drop files here or click to browse",
+      "maxFileSize": "Maximum file size: 10MB",
+      "supportedFormats": "Supported formats: PDF, DOC, DOCX, JPG, PNG"
+    },
+    "buttons": {
+      "previous": "Previous",
+      "next": "Next",
+      "submit": "Post Project",
+      "cancel": "Cancel",
+      "addSkill": "Add Skill",
+      "removeFile": "Remove"
+    },
+    "messages": {
+      "success": "Project posted successfully!",
+      "error": "Please fill in all required fields",
+      "loading": "Posting project..."
+    }
+  },
+  "projectDiscovery": {
+    "title": "Project Discovery",
+    "header": {
+      "title": "Project Discovery",
+      "projectOffers": "Project Offers"
+    },
+    "allProjects": "All Projects",
+    "savedProjects": "Saved Projects",
+    "search": {
+      "placeholder": "Search projects by title, skills, keywords...",
+      "noResults": "No projects found",
+      "adjustFilters": "Try adjusting your search criteria or filters to find more projects.",
+      "browsing": "Browsing Projects"
+    },
+    "filters": {
+      "title": "Filters",
+      "category": "Category",
+      "skills": "Skills",
+      "selected": "Selected",
+      "projectType": "Project Type",
+      "fixed": "Fixed Price",
+      "hourly": "Hourly Rate",
+      "budget": "Budget Range",
+      "budgetMin": "Min Budget (€)",
+      "budgetMax": "Max Budget (€)",
+      "complexity": "Complexity",
+      "entry": "Entry Level",
+      "intermediate": "Intermediate", 
+      "expert": "Expert",
+      "remote": "Remote Work Only",
+      "clear": "Clear All Filters"
+    },
+    "project": {
+      "postedBy": "Posted by",
+      "budget": "Budget",
+      "deadline": "Deadline", 
+      "timeline": "Timeline",
+      "experience": "Experience",
+      "remote": "Remote",
+      "onSite": "On-site",
+      "proposals": "Proposals",
+      "viewDetails": "View Details",
+      "saveProject": "Save Project",
+      "unsaveProject": "Unsave Project",
+      "applyNow": "Apply Now",
+      "applied": "Applied"
+    },
+    "banners": {
+      "featuredProjects": {
+        "title": "Discover Featured Projects",
+        "description": "Find high-quality projects from top clients looking for talented professionals like you.",
+        "buttonText": "Browse Featured"
+      },
+      "skillMatch": {
+        "title": "Projects Matching Your Skills",
+        "description": "We've found projects that perfectly match your expertise and experience level.",
+        "buttonText": "View Matches"
+      },
+      "urgentProjects": {
+        "title": "Urgent Projects Available",
+        "description": "Quick turnaround projects with competitive rates. Apply now before they're gone!",
+        "buttonText": "See Urgent"
+      }
+    },
+    "modal": {
+      "projectDetails": "Project Details",
+      "applyToProject": "Apply to Project",
+      "coverLetter": "Cover Letter",
+      "coverLetterPlaceholder": "Describe your relevant experience, how you plan to approach this project, and why you're the best fit for this job...",
+      "proposedRate": "Your Proposed Rate",
+      "proposedRatePlaceholder": "Enter your hourly rate",
+      "proposedBudget": "Your Proposed Budget",
+      "proposedBudgetPlaceholder": "Enter your budget",
+      "deliveryTimeline": "Delivery Timeline",
+      "deliveryTimelinePlaceholder": "e.g., 4 weeks",
+      "attachments": "Attachments",
+      "portfolioItems": "Portfolio Items",
+      "additionalInfo": "Additional Information",
+      "additionalInfoPlaceholder": "Any additional information or questions for the client...",
+      "submitApplication": "Submit Application",
+      "cancel": "Cancel",
+      "close": "Close"
+    }
+  },
+  "clientDashboard": {
+    "title": "Client Dashboard",
+    "header": {
+      "title": "Client Dashboard",
+      "postProject": "Post Project",
+      "postNewProject": "Post New Project",
+      "profile": "Profile",
+      "logout": "Logout"
+    },
+    "tabs": {
+      "applications": "Applications",
+      "offers": "Offers",
+      "projects": "My Projects"
+    },
+    "filters": {
+      "filterByProject": "Filter by Project",
+      "allProjects": "All Projects",
+      "filterByStatus": "Filter by Status",
+      "allStatuses": "All Statuses",
+      "clearFilters": "Clear Filters"
+    },
+    "status": {
+      "pending": "Pending",
+      "reviewed": "Reviewed",
+      "shortlisted": "Shortlisted",
+      "offered": "Offered",
+      "rejected": "Rejected"
+    },
+    "applications": {
+      "appliedTo": "Applied to",
+      "availableEngineers": "Available Engineers",
+      "skills": "Skills",
+      "proposedBudget": "Proposed Budget",
+      "timeline": "Timeline",
+      "hourlyRate": "Hourly Rate",
+      "viewDetails": "View Details",
+      "markAsReviewed": "Mark as Reviewed",
+      "shortlist": "Shortlist",
+      "sendOffer": "Send Offer",
+      "reject": "Reject"
+    },
+    "offers": {
+      "title": "Offers",
+      "noOffers": "No offers sent yet"
+    },
+    "projects": {
+      "title": "My Projects",
+      "noProjects": "No projects posted yet"
+    }
+  },
+  "projectOffers": {
+    "title": "Project Offers",
+    "header": {
+      "title": "Project Offers",
+      "browseProjects": "Browse Projects",
+      "profile": "Profile"
+    },
+    "tabs": {
+      "pending": "Pending",
+      "responded": "Responded",
+      "all": "All Offers"
+    },
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "expired": "Expired"
+    },
+    "empty": {
+      "title": "No offers yet",
+      "description": "You haven't received any project offers yet. Keep building your profile and applying to projects!",
+      "browseProjects": "Browse Projects"
+    },
+    "urgency": {
+      "expiresIn": "Expires in",
+      "days": "days"
+    },
+    "sentOn": "Sent on",
+    "expiresOn": "Expires on",
+    "reviews": "reviews",
+    "requiredSkills": "Required Skills",
+    "clientMessage": "Message from Client",
+    "budget": "Budget",
+    "timeline": "Timeline",
+    "projectType": "Project Type",
+    "terms": "Terms & Conditions",
+    "yourResponse": "Your Response",
+    "acceptedMessage": "You accepted this project offer.",
+    "declinedMessage": "You declined this project offer.",
+    "types": {
+      "fixed": "Fixed Price",
+      "hourly": "Hourly Rate"
+    },
+    "actions": {
+      "viewProject": "View Project Details",
+      "accept": "Accept Offer",
+      "decline": "Decline Offer"
+    },
+    "modal": {
+      "acceptTitle": "Accept Project Offer",
+      "declineTitle": "Decline Project Offer",
+      "client": "Client",
+      "budget": "Budget",
+      "responseMessage": "Response Message",
+      "messagePlaceholder": "Write your response message here...",
+      "counterBudget": "Counter Budget (Optional)",
+      "counterBudgetPlaceholder": "Your proposed budget",
+      "counterDeadline": "Counter Deadline (Optional)",
+      "additionalTerms": "Additional Terms (Optional)",
+      "additionalTermsPlaceholder": "Any additional terms or conditions...",
+      "cancel": "Cancel",
+      "acceptProject": "Accept Project",
+      "declineProject": "Decline Project"
+    },
+    "response": {
+      "acceptSuccess": "You have successfully accepted the project offer for \"{{projectTitle}}\"!",
+      "declineSuccess": "You have declined the project offer for \"{{projectTitle}}\"."
+    },
+    "validation": {
+      "required": "This field is required",
+      "minLength": "Minimum {{minLength}} characters required"
+    }
   }
 }

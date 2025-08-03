@@ -1,0 +1,121 @@
+.task-board {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  // Drag and drop styling
+  .dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+  }
+
+  .drag-over {
+    background-color: #f0f9ff !important;
+    border-color: #0ea5e9 !important;
+  }
+
+  // Column styling
+  .kanban-column {
+    min-height: 500px;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  // Task card animations
+  .task-card {
+    transition: all 0.2s ease-in-out;
+    cursor: grab;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  // Priority indicators
+  .priority-high {
+    border-left: 4px solid #ef4444;
+  }
+
+  .priority-medium {
+    border-left: 4px solid #f59e0b;
+  }
+
+  .priority-low {
+    border-left: 4px solid #10b981;
+  }
+
+  // Comment section styling
+  .comments-section {
+    max-height: 300px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+
+      &:hover {
+        background: #94a3b8;
+      }
+    }
+  }
+
+  // Modal styling
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    .grid-cols-4 {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .kanban-column {
+      min-height: 300px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .grid-cols-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.2s ease-out;
+}

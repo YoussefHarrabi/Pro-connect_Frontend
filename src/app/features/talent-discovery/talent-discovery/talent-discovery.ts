@@ -1,10 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { TalentProfile, TalentDiscoveryService, SearchFilters } from '../talent-discovery';
 import { TranslateModule, TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Project } from '../../../shared/models/project';
+import { SharedNavbar, NavbarConfig } from '../../../shared/components/shared-navbar/shared-navbar';
+import { SharedFooter } from '../../../shared/components/shared-footer/shared-footer';
 
 @Component({
   selector: 'app-talent-discovery',
@@ -12,6 +15,8 @@ import { TranslateModule, TranslatePipe, TranslateService } from '@ngx-translate
     CommonModule,
     ReactiveFormsModule,
     TranslateModule,
+    SharedNavbar,
+    SharedFooter,
   ],
   templateUrl: './talent-discovery.html',
   styleUrl: './talent-discovery.scss'
@@ -19,13 +24,34 @@ import { TranslateModule, TranslatePipe, TranslateService } from '@ngx-translate
 export class TalentDiscovery implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
+  // Navbar configuration
+  navbarConfig: NavbarConfig = {
+    title: 'talentDiscovery.title',
+    showLanguageToggle: true,
+    showProfileLink: true,
+    showLogoutButton: true,
+    customButtons: [
+      {
+        label: 'talentDiscovery.navbar.postProject',
+        route: '/project-posting',
+        class: 'px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200'
+      }
+    ]
+  };
+  
   searchForm!: FormGroup;
+  projectAssignForm!: FormGroup;
   talents: TalentProfile[] = [];
   filteredTalents: TalentProfile[] = [];
   shortlistedTalents: string[] = [];
   isLoading = false;
   showFilters = false;
   activeView: 'search' | 'shortlist' = 'search';
+  
+  // Project Assignment Modal
+  showProjectModal = false;
+  selectedTalent: TalentProfile | null = null;
+  clientProjects: Project[] = []; // This would normally come from a service
   
   // Filter options
   availableSkills: string[] = [];
@@ -64,19 +90,16 @@ export class TalentDiscovery implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initializeForm();
+    this.initializeProjectAssignForm();
     this.loadInitialData();
     this.setupFormSubscriptions();
     this.loadShortlist();
+    this.loadClientProjects();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  toggleLanguage(): void {
-    const newLang = this.translate.currentLang === 'en' ? 'fr' : 'en';
-    this.translate.use(newLang);
   }
 
   initializeForm(): void {
@@ -296,5 +319,106 @@ export class TalentDiscovery implements OnInit, OnDestroy {
 
   toggleFilters(): void {
     this.showFilters = !this.showFilters;
+  }
+
+  initializeProjectAssignForm(): void {
+    this.projectAssignForm = this.fb.group({
+      projectId: ['', Validators.required],
+      message: ['', Validators.required],
+      deadline: [''],
+      budget: ['']
+    });
+  }
+
+  loadClientProjects(): void {
+    // Mock client projects - in real app, this would come from a service
+    this.clientProjects = [
+      {
+        id: '1',
+        title: 'E-commerce Website Development',
+        description: 'Build a modern e-commerce platform with React and Node.js',
+        clientId: 'client1',
+        clientName: 'John Doe',
+        clientRating: 4.8,
+        clientReviews: 25,
+        category: 'web-development' as any,
+        skills: ['React', 'Node.js', 'MongoDB'],
+        budget: { type: 'fixed', min: 2000, max: 5000, currency: 'EUR', isNegotiable: true },
+        timeline: { duration: '2-3 months', isFlexible: true },
+        complexity: 'intermediate',
+        proposals: 12,
+        status: 'open' as any,
+        postedDate: new Date(),
+        isRemote: true,
+        isUrgent: false,
+        isFeatured: false,
+        projectType: 'fixed',
+        preferredTalentType: 'both',
+        experienceLevel: 'intermediate'
+      },
+      {
+        id: '2',
+        title: 'Mobile App UI/UX Design',
+        description: 'Design a modern and intuitive mobile app interface',
+        clientId: 'client1',
+        clientName: 'John Doe',
+        clientRating: 4.8,
+        clientReviews: 25,
+        category: 'design' as any,
+        skills: ['UI/UX Design', 'Figma', 'Mobile Design'],
+        budget: { type: 'fixed', min: 1000, max: 3000, currency: 'EUR', isNegotiable: true },
+        timeline: { duration: '1 month', isFlexible: false },
+        complexity: 'intermediate',
+        proposals: 8,
+        status: 'open' as any,
+        postedDate: new Date(),
+        isRemote: true,
+        isUrgent: true,
+        isFeatured: false,
+        projectType: 'fixed',
+        preferredTalentType: 'freelancer',
+        experienceLevel: 'intermediate'
+      }
+    ];
+  }
+
+  openProjectAssignModal(talent: TalentProfile): void {
+    this.selectedTalent = talent;
+    this.showProjectModal = true;
+    this.projectAssignForm.reset();
+  }
+
+  closeProjectAssignModal(): void {
+    this.showProjectModal = false;
+    this.selectedTalent = null;
+    this.projectAssignForm.reset();
+  }
+
+  assignProjectToTalent(): void {
+    if (this.projectAssignForm.valid && this.selectedTalent) {
+      const formValue = this.projectAssignForm.value;
+      const selectedProject = this.clientProjects.find(p => p.id === formValue.projectId);
+      
+      if (selectedProject) {
+        // In a real app, this would make an API call to assign the project
+        const assignmentData = {
+          talentId: this.selectedTalent.id,
+          projectId: formValue.projectId,
+          message: formValue.message,
+          deadline: formValue.deadline,
+          budget: formValue.budget
+        };
+        
+        console.log('Assigning project to talent:', assignmentData);
+        
+        // Show success message
+        alert(this.translate.instant('talentDiscovery.projectAssignment.successMessage', {
+          talentName: `${this.selectedTalent.firstName} ${this.selectedTalent.lastName}`,
+          projectTitle: selectedProject.title
+        }));
+        
+        this.closeProjectAssignModal();
+      }
+    }
   }
 }

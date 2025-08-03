@@ -1,0 +1,210 @@
+// Modern Navbar Component Styles - Upwork Inspired
+header {
+  background-color: white;
+  box-shadow: 0 1px 3px 0 rgba(254, 254, 254, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+// Logo hover effect
+.logo-container {
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+// Navigation dropdown animations
+.group {
+  &:hover .group-hover\\:opacity-100 {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  
+  &:hover .group-hover\\:visible {
+    visibility: visible;
+  }
+}
+
+// Dropdown menu base styles
+.dropdown-menu {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid white;
+  }
+}
+
+// Search bar enhancements
+.search-container {
+  position: relative;
+  
+  input {
+    transition: all 0.2s ease;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    
+    &:focus {
+      background-color: white;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-color: #3b82f6;
+    }
+    
+    &::placeholder {
+      color: #9ca3af;
+    }
+  }
+}
+
+// Notification and message badges
+.notification-badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Profile avatar enhancement
+.profile-avatar {
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  
+  &:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+}
+
+// Mobile menu slide animation
+.mobile-menu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  
+  &.open {
+    max-height: 400px;
+  }
+}
+
+// Button hover effects
+.nav-button {
+  transition: all 0.2s ease;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: #3b82f6;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+  }
+  
+  &:hover::after {
+    width: 100%;
+  }
+}
+
+// Language toggle modern style
+.language-toggle {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: white;
+  
+  button {
+    transition: all 0.2s ease;
+    
+    &.active {
+      background-color: #3b82f6;
+      color: white;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    &:not(.active):hover {
+      background-color: #f3f4f6;
+    }
+  }
+}
+
+// Custom scrollbar for dropdowns
+.dropdown-content {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #94a3b8;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none;
+  }
+  
+  .mobile-menu {
+    background-color: white;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Dark mode support (if needed later)
+@media (prefers-color-scheme: dark) {
+  header {
+    background-color: rgba(17, 24, 39, 0.95);
+    border-bottom-color: #374151;
+  }
+  
+  .dropdown-menu {
+    background-color: #1f2937;
+    border-color: #374151;
+    
+    &::before {
+      border-bottom-color: #1f2937;
+    }
+  }
+}

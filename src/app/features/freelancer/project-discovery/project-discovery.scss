@@ -1,0 +1,405 @@
+.input-field {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+}
+
+.input-error {
+  @apply border-red-500 focus:ring-red-500 focus:border-red-500;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Banner animations
+.banner-slide-enter {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.banner-slide-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: all 0.5s ease-in-out;
+}
+
+.banner-slide-exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.banner-slide-exit-active {
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+}
+
+// Modal animations
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.3s ease-out;
+}
+
+// Define primary colors if not defined elsewhere
+:root {
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+}
+
+.bg-primary-50 { background-color: var(--primary-50); }
+.bg-primary-100 { background-color: var(--primary-100); }
+.bg-primary-600 { background-color: var(--primary-600); }
+.text-primary-600 { color: var(--primary-600); }
+.text-primary-700 { color: var(--primary-700); }
+.border-primary-500 { border-color: var(--primary-500); }
+.hover\:bg-primary-700:hover { background-color: var(--primary-700); }
+
+// Project card hover effects
+.project-card {
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+}
+
+// Custom scrollbar for modal
+.modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+.input-field {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+}
+
+.input-error {
+  @apply border-red-500 focus:ring-red-500 focus:border-red-500;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// File upload area styling
+.file-upload-area {
+  position: relative;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  background-color: #f9fafb;
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    border-color: #6366f1;
+    background-color: #f0f9ff;
+  }
+  
+  .upload-button {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    
+    &:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+  
+  .upload-icon {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    color: #6b7280;
+  }
+  
+  .upload-text {
+    color: #374151;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+  }
+}
+
+// Portfolio item styling
+.portfolio-item {
+  cursor: pointer;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.2s ease-in-out;
+  background-color: white;
+  
+  &:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.selected {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+    
+    .checkmark {
+      color: #3b82f6;
+    }
+  }
+}
+
+// File list styling
+.uploaded-file-item {
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    
+    .file-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: #6b7280;
+    }
+    
+    .file-details {
+      .file-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #111827;
+      }
+      
+      .file-size {
+        font-size: 0.75rem;
+        color: #6b7280;
+      }
+    }
+  }
+  
+  .remove-button {
+    color: #ef4444;
+    transition: color 0.2s ease-in-out;
+    
+    &:hover {
+      color: #dc2626;
+    }
+  }
+}
+
+// Banner animations
+.banner-slide-enter {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.banner-slide-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: all 0.5s ease-in-out;
+}
+
+.banner-slide-exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.banner-slide-exit-active {
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+}
+
+// Modal animations
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.3s ease-out;
+}
+
+// Define primary colors
+:root {
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+}
+
+.bg-primary-50 { background-color: var(--primary-50); }
+.bg-primary-100 { background-color: var(--primary-100); }
+.bg-primary-600 { background-color: var(--primary-600); }
+.text-primary-600 { color: var(--primary-600); }
+.text-primary-700 { color: var(--primary-700); }
+.border-primary-500 { border-color: var(--primary-500); }
+.hover\:bg-primary-700:hover { background-color: var(--primary-700); }
+
+// Project card hover effects
+.project-card {
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+}
+
+// Custom scrollbar for modal
+.modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+// Form styling
+.form-section {
+  margin-bottom: 1.5rem;
+  
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    &.error {
+      border-color: #ef4444;
+    }
+  }
+  
+  .form-textarea {
+    resize: vertical;
+    min-height: 6rem;
+  }
+  
+  .error-message {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  .help-text {
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+}
+
+// Button styling
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: none;
+  
+  &.btn-primary {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+  
+  &.btn-secondary {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    
+    &:hover {
+      background-color: #f9fafb;
+    }
+  }
+}

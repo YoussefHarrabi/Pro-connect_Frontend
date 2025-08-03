@@ -1,0 +1,153 @@
+.workspace-chat {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .messages-container {
+    background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+
+      &:hover {
+        background: #94a3b8;
+      }
+    }
+  }
+
+  .message {
+    animation: messageSlideIn 0.3s ease-out;
+  }
+
+  .message-bubble {
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    // Tail for speech bubbles
+    &::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      width: 0;
+      height: 0;
+      border: 6px solid transparent;
+    }
+
+    // My messages (right side)
+    &.bg-primary-600::before {
+      right: -12px;
+      border-left-color: #2563eb;
+    }
+
+    // Other person's messages (left side)  
+    &.bg-gray-100::before {
+      left: -12px;
+      border-right-color: #f3f4f6;
+    }
+  }
+
+  .date-separator {
+    margin: 1rem 0;
+  }
+
+  .typing-indicator {
+    .typing-dot {
+      animation: typingDot 1.4s infinite ease-in-out;
+
+      &:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+
+      &:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+    }
+  }
+
+  .attachment {
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .selected-files {
+    max-height: 100px;
+    overflow-y: auto;
+  }
+
+  .message-input {
+    textarea {
+      min-height: 40px;
+      max-height: 120px;
+      transition: all 0.2s ease-in-out;
+
+      &:focus {
+        min-height: 60px;
+      }
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    .message-bubble {
+      max-width: 280px;
+    }
+
+    .chat-header {
+      padding: 1rem;
+
+      h2 {
+        font-size: 1.125rem;
+      }
+    }
+
+    .messages-container,
+    .message-input {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+}
+
+// Animations
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes typingDot {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// Utilities
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

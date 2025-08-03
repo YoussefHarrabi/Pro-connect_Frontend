@@ -1,0 +1,226 @@
+.file-manager {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .file-manager-header {
+    flex-shrink: 0;
+  }
+
+  .file-stats {
+    flex-shrink: 0;
+  }
+
+  .files-content {
+    flex: 1;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+
+      &:hover {
+        background: #94a3b8;
+      }
+    }
+  }
+
+  .file-card {
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .file-preview {
+      transition: transform 0.2s ease-in-out;
+    }
+
+    &:hover .file-preview {
+      transform: scale(1.05);
+    }
+
+    .file-actions {
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    &:hover .file-actions {
+      opacity: 1;
+    }
+  }
+
+  // File type colors
+  .file-type-image {
+    background-color: #dcfce7;
+    color: #166534;
+  }
+
+  .file-type-document {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+
+  .file-type-archive {
+    background-color: #f3e8ff;
+    color: #7c3aed;
+  }
+
+  .file-type-other {
+    background-color: #f1f5f9;
+    color: #475569;
+  }
+
+  // Grid responsive adjustments
+  @media (max-width: 640px) {
+    .grid-cols-6 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .file-card {
+      padding: 0.75rem;
+
+      .file-preview {
+        margin-bottom: 0.5rem;
+
+        .w-16 {
+          width: 3rem;
+          height: 3rem;
+        }
+      }
+
+      .file-info {
+        h3 {
+          font-size: 0.75rem;
+        }
+
+        p {
+          font-size: 0.625rem;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .grid-cols-6 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .file-manager-header {
+      padding: 1rem;
+
+      .flex-col {
+        space-y: 1rem;
+      }
+    }
+
+    .file-stats {
+      padding: 1rem;
+
+      .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .grid-cols-6 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  // List view table styling
+  table {
+    tr {
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    th {
+      transition: color 0.2s ease-in-out;
+
+      &:hover {
+        color: #374151;
+      }
+    }
+
+    .file-actions {
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    tr:hover .file-actions {
+      opacity: 1;
+    }
+  }
+
+  // Upload area styling
+  .upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #2563eb;
+      background-color: #f8fafc;
+    }
+
+    &.drag-over {
+      border-color: #2563eb;
+      background-color: #eff6ff;
+    }
+  }
+
+  // Animation for file cards
+  .file-card {
+    animation: fadeInUp 0.3s ease-out;
+  }
+
+  // Empty state styling
+  .empty-state {
+    .mx-auto {
+      animation: float 3s ease-in-out infinite;
+    }
+  }
+}
+
+// Animations
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+// Utility classes
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
