@@ -129,7 +129,7 @@
         </div>
 
         <!-- User Profile Dropdown -->
-        <div class="relative group">
+        <div *ngIf="isLoggedIn$ | async" class="relative group">
           <button class="flex items-center space-x-2 p-1.5 rounded-full hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
             <img 
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" 
@@ -144,8 +144,18 @@
           <!-- Profile Dropdown Menu -->
           <div class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
             <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-              <p class="text-sm font-semibold text-gray-900">John Doe</p>
-              <p class="text-sm text-gray-600">john.doe@example.com</p>
+              <ng-container *ngIf="currentUser$ | async as user; else defaultUser">
+                <p class="text-sm font-semibold text-gray-900">{{ user.username }}</p>
+                <p class="text-sm text-gray-600">{{ user.email }}</p>
+                <span class="inline-block px-2 py-1 text-xs font-medium rounded-full mt-1"
+                      [class]="getUserRoleClass(user.role)">
+                  {{ getUserRoleDisplay(user.role) }}
+                </span>
+              </ng-container>
+              <ng-template #defaultUser>
+                <p class="text-sm font-semibold text-gray-900">Guest User</p>
+                <p class="text-sm text-gray-600">Not logged in</p>
+              </ng-template>
             </div>
             <div class="py-2">
               <a routerLink="/profile" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">

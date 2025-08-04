@@ -3,6 +3,9 @@ import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AuthenticationRequest } from '../../../core/dto';
+import { AuthService } from '../../../core/services/auth';
+
 
 @Component({
   selector: 'app-login',
@@ -20,10 +23,12 @@ export class Login implements OnInit {
   hidePassword = true;
   isLoading = false;
   isLoginSuccess = false;
+  errorMessage = '';
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private authService: AuthService,
     public translate: TranslateService
   ) {}
 
@@ -39,28 +44,37 @@ export class Login implements OnInit {
     });
   }
 
-  toggleLanguage(): void {
-    const newLang = this.translate.currentLang === 'en' ? 'fr' : 'en';
-    this.translate.use(newLang);
-  }
-
   onSubmit(): void {
     if (this.loginForm.valid) {
       this.isLoading = true;
       this.isLoginSuccess = false;
-      console.log('Login attempt:', this.loginForm.value);
-      
-      // Simulate successful login after 1.5 seconds
-      setTimeout(() => {
-        this.isLoading = false;
-        this.isLoginSuccess = true;
-        console.log('Login successful! Redirecting to project discovery...');
-        
-        // Show success state for 1 second, then redirect
-        setTimeout(() => {
-          this.router.navigate(['/project-discovery']);
-        }, 1000);
-      }, 1500);
+      this.errorMessage = '';
+
+      const credentials: AuthenticationRequest = {
+        username: this.loginForm.value.username,
+        password: this.loginForm.value.password
+      };
+
+      console.log('Login attempt:', credentials);
+
+      this.authService.login(credentials).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          this.isLoginSuccess = true;
+          console.log('Login successful:', response);
+
+          // Show success state for 1 second, then redirect based on role
+          setTimeout(() => {
+            const redirectUrl = this.authService.getRedirectUrlByRole(response.role);
+            this.router.navigate([redirectUrl]);
+          }, 1000);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = error.message || 'Login failed. Please try again.';
+          console.error('Login failed:', error);
+        }
+      });
     } else {
       this.markFormGroupTouched();
     }
@@ -83,6 +97,11 @@ export class Login implements OnInit {
 
   onRegister(): void {
     this.router.navigate(['/auth/register']);
+  }
+
+  toggleLanguage(): void {
+    const newLang = this.translate.currentLang === 'en' ? 'fr' : 'en';
+    this.translate.use(newLang);
   }
 
   getErrorMessage(fieldName: string): string {

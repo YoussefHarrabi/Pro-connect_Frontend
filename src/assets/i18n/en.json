@@ -301,6 +301,7 @@
   },
   "loginSuccess": "Login successful! Redirecting to project discovery...",
   "loginSuccessShort": "Login Successful!",
+  "confirmLogout": "Are you sure you want to sign out?",
   "talentDiscovery": {
     "title": "Talent Discovery",
     "navbar": {

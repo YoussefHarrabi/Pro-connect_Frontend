@@ -1,13 +1,14 @@
 import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideHttpClient, HttpClient } from '@angular/common/http';
+import { provideHttpClient, HttpClient, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 // Correct Imports for ngx-translate
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader'; // <-- MAKE SURE THIS IMPORT IS CORRECT
 
 import { routes } from './app.routes';
+import { JwtInterceptor } from './core/interceptors/jwt.interceptor';
 
 // This factory function tells ngx-translate how to load the translation files
 export function HttpLoaderFactory(httpClient: HttpClient) {
@@ -20,6 +21,12 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideAnimationsAsync(),
+     provideHttpClient(),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: JwtInterceptor,
+      multi: true
+    },
 
     // ngx-translate configuration
     provideHttpClient(),

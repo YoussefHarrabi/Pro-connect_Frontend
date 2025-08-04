@@ -1,0 +1,112 @@
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string; // Single role instead of roles array
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  location?: string;
+  profilePicture?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  location: string;
+  profilePicture?: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Role-specific data
+  serviceCompany?: ServiceCompanyProfile;
+  freelancer?: FreelancerProfile;
+  client?: ClientProfile;
+}
+
+export interface ServiceCompanyProfile {
+  companyName: string;
+  companySize: string;
+  establishedYear: number;
+  website?: string;
+  companyDescription: string;
+  logoUrl?: string;
+  verified: boolean;
+}
+
+export interface FreelancerProfile {
+  specialization: string;
+  experienceLevel: string;
+  hourlyRate: number;
+  availableHours: string;
+  skills: string;
+  portfolioUrl?: string;
+  resumeUrl?: string;
+  rating?: number;
+  completedProjects?: number;
+  verified: boolean;
+}
+
+export interface ClientProfile {
+  industry: string;
+  companyType: string;
+  projectBudgetRange: string;
+  preferredProjectDuration: string;
+  companySize?: string;
+  website?: string;
+  description?: string;
+  verified: boolean;
+}
+
+export interface UserRole {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+}
+
+export interface UpdateUserProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  location?: string;
+  profilePicture?: string;
+}
+
+export interface UpdateServiceCompanyRequest {
+  companyName?: string;
+  companySize?: string;
+  establishedYear?: number;
+  website?: string;
+  companyDescription?: string;
+  logoUrl?: string;
+}
+
+export interface UpdateFreelancerRequest {
+  specialization?: string;
+  experienceLevel?: string;
+  hourlyRate?: number;
+  availableHours?: string;
+  skills?: string;
+  portfolioUrl?: string;
+  resumeUrl?: string;
+}
+
+export interface UpdateClientRequest {
+  industry?: string;
+  companyType?: string;
+  projectBudgetRange?: string;
+  preferredProjectDuration?: string;
+  companySize?: string;
+  website?: string;
+  description?: string;
+}

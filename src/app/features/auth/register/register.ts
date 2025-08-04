@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { RegisterRequest } from '../../../core/dto/auth';
+import { AuthService } from '../../../core/services/auth';
 
 export interface UserRole {
   id: string;
@@ -69,7 +71,9 @@ export class Register implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+      private authService: AuthService // Add this
+
   ) {}
 
   ngOnInit(): void {
@@ -295,20 +299,33 @@ export class Register implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.registerForm.valid) {
-      this.isLoading = true;
-      console.log('Registration attempt:', this.registerForm.value);
-      
-      // Simulate API call
-      setTimeout(() => {
+  if (this.registerForm.valid) {
+    this.isLoading = true;
+    
+    const registerData: RegisterRequest = {
+      ...this.registerForm.value
+    };
+    
+    console.log('Registration attempt:', registerData);
+    
+    this.authService.register(registerData).subscribe({
+      next: (response) => {
         this.isLoading = false;
-        alert('Registration successful! Please login with your credentials.');
-        this.router.navigate(['/auth/login']);
-      }, 2000);
-    } else {
-      this.markCurrentStepTouched();
-    }
+        console.log('Registration successful:', response);
+        // You can either auto-login or redirect to login
+        alert('Registration successful! You are now logged in.');
+        this.router.navigate(['/dashboard']); // or wherever you want to redirect
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Registration failed:', error);
+        alert(`Registration failed: ${error.message}`);
+      }
+    });
+  } else {
+    this.markCurrentStepTouched();
   }
+}
 
   onLogin(): void {
     this.router.navigate(['/auth/login']);

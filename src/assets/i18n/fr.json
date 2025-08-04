@@ -299,6 +299,7 @@
   },
   "loginSuccess": "Connexion réussie ! Redirection vers la découverte de projets...",
   "loginSuccessShort": "Connexion Réussie !",
+  "confirmLogout": "Êtes-vous sûr de vouloir vous déconnecter ?",
   "talentDiscovery": {
     "title": "Découverte de Talents",
     "navbar": {
