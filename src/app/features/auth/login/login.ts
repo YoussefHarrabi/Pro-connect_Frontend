@@ -19,6 +19,7 @@ export class Login implements OnInit {
   loginForm!: FormGroup;
   hidePassword = true;
   isLoading = false;
+  isLoginSuccess = false;
 
   constructor(
     private fb: FormBuilder,
@@ -46,12 +47,20 @@ export class Login implements OnInit {
   onSubmit(): void {
     if (this.loginForm.valid) {
       this.isLoading = true;
+      this.isLoginSuccess = false;
       console.log('Login attempt:', this.loginForm.value);
       
+      // Simulate successful login after 1.5 seconds
       setTimeout(() => {
         this.isLoading = false;
-        this.router.navigate(['/profile']);
-      }, 2000);
+        this.isLoginSuccess = true;
+        console.log('Login successful! Redirecting to project discovery...');
+        
+        // Show success state for 1 second, then redirect
+        setTimeout(() => {
+          this.router.navigate(['/project-discovery']);
+        }, 1000);
+      }, 1500);
     } else {
       this.markFormGroupTouched();
     }

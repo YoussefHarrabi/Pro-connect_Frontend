@@ -297,6 +297,8 @@
     "required": "Le champ {{field}} est requis",
     "minLength": "Le champ {{field}} doit contenir au moins {{length}} caractères"
   },
+  "loginSuccess": "Connexion réussie ! Redirection vers la découverte de projets...",
+  "loginSuccessShort": "Connexion Réussie !",
   "talentDiscovery": {
     "title": "Découverte de Talents",
     "navbar": {

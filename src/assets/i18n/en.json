@@ -299,6 +299,8 @@
     "required": "{{field}} is required",
     "minLength": "{{field}} must be at least {{length}} characters"
   },
+  "loginSuccess": "Login successful! Redirecting to project discovery...",
+  "loginSuccessShort": "Login Successful!",
   "talentDiscovery": {
     "title": "Talent Discovery",
     "navbar": {
