@@ -1,0 +1,610 @@
+<div class="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 flex items-center justify-center p-4">
+  <div class="w-full max-w-2xl animate-fade-in">
+    <!-- Registration Card -->
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-gray-800 to-gray-900 px-8 py-6 text-center">
+        <h1 class="text-2xl font-bold text-white mb-1">Join Pro-Connect</h1>
+        <p class="text-gray-300 text-sm">Create your account and start connecting</p>
+        
+        <!-- Progress Bar -->
+        <div class="mt-4 bg-gray-700 rounded-full h-2">
+          <div 
+            class="bg-gradient-to-r from-primary-400 to-secondary-400 h-2 rounded-full transition-all duration-300"
+            [style.width.%]="getProgressPercentage()">
+          </div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mt-2">
+          <span [class.text-white]="currentStep >= 1">Choose Role</span>
+          <span [class.text-white]="currentStep >= 2">Account</span>
+          <span [class.text-white]="currentStep >= 3">Details</span>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="p-8">
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+          
+          <!-- Step 1: Role Selection -->
+          <div *ngIf="currentStep === 1" class="space-y-6 animate-slide-up">
+            <div class="text-center mb-6">
+              <h2 class="text-xl font-semibold text-gray-800 mb-2">Choose Your Role</h2>
+              <p class="text-gray-600 text-sm">Select the option that best describes you</p>
+            </div>
+
+            <div class="grid gap-4">
+              <div 
+                *ngFor="let role of userRoles" 
+                (click)="selectRole(role.id)"
+                [class]="selectedRole === role.id 
+                  ? 'border-2 border-primary-500 bg-primary-50' 
+                  : 'border-2 border-gray-200 hover:border-primary-300'"
+                class="cursor-pointer rounded-xl p-6 transition-all duration-200"
+              >
+                <div class="flex items-start space-x-4">
+                  <div class="text-3xl">{{ role.icon }}</div>
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-gray-800 mb-1">{{ role.name }}</h3>
+                    <p class="text-gray-600 text-sm mb-3">{{ role.description }}</p>
+                    <ul class="space-y-1">
+                      <li *ngFor="let feature of role.features" class="text-xs text-gray-500 flex items-center">
+                        <svg class="w-3 h-3 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ feature }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="isFieldInvalid('role')" class="text-red-500 text-sm text-center">
+              Please select a role to continue
+            </div>
+          </div>
+
+          <!-- Step 2: Account Creation -->
+          <div *ngIf="currentStep === 2" class="space-y-6 animate-slide-up">
+            <div class="text-center mb-6">
+              <h2 class="text-xl font-semibold text-gray-800 mb-2">Create Account</h2>
+              <p class="text-gray-600 text-sm">Choose your username and password</p>
+            </div>
+
+            <!-- Username -->
+            <div class="space-y-1">
+              <label for="username" class="text-sm font-medium text-gray-700 block">
+                Username *
+              </label>
+              <input
+                id="username"
+                type="text"
+                formControlName="username"
+                placeholder="Choose a unique username"
+                [class]="isFieldInvalid('username') ? 'input-field input-error' : 'input-field'"
+              />
+              <div class="text-xs text-gray-500">
+                Only letters, numbers, and underscores. 3-20 characters.
+              </div>
+              <div *ngIf="isFieldInvalid('username')" class="text-red-500 text-xs">
+                {{ getErrorMessage('username') }}
+              </div>
+            </div>
+
+            <!-- Password Fields -->
+            <div class="grid grid-cols-1 gap-4">
+              <div class="space-y-1">
+                <label for="password" class="text-sm font-medium text-gray-700 block">
+                  Password *
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  formControlName="password"
+                  placeholder="Create a strong password"
+                  [class]="isFieldInvalid('password') ? 'input-field input-error' : 'input-field'"
+                />
+                <div class="text-xs text-gray-500">
+                  Minimum 8 characters required
+                </div>
+                <div *ngIf="isFieldInvalid('password')" class="text-red-500 text-xs">
+                  {{ getErrorMessage('password') }}
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label for="confirmPassword" class="text-sm font-medium text-gray-700 block">
+                  Confirm Password *
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  formControlName="confirmPassword"
+                  placeholder="Confirm your password"
+                  [class]="isFieldInvalid('confirmPassword') ? 'input-field input-error' : 'input-field'"
+                />
+                <div *ngIf="isFieldInvalid('confirmPassword')" class="text-red-500 text-xs">
+                  {{ getErrorMessage('confirmPassword') }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Role-specific Details -->
+          <div *ngIf="currentStep === 3" class="space-y-6 animate-slide-up">
+            <div class="text-center mb-6">
+              <h2 class="text-xl font-semibold text-gray-800 mb-2">Complete Your Profile</h2>
+              <p class="text-gray-600 text-sm">{{ getRoleDisplayName() }} - Additional Information</p>
+            </div>
+
+            <!-- Common Fields -->
+            <div class="bg-gray-50 rounded-xl p-6 mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Personal Information</h3>
+              
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                  <label for="firstName" class="text-sm font-medium text-gray-700 block">
+                    First Name *
+                  </label>
+                  <input
+                    id="firstName"
+                    type="text"
+                    formControlName="firstName"
+                    placeholder="Your first name"
+                    [class]="isFieldInvalid('firstName') ? 'input-field input-error' : 'input-field'"
+                  />
+                  <div *ngIf="isFieldInvalid('firstName')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('firstName') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="lastName" class="text-sm font-medium text-gray-700 block">
+                    Last Name *
+                  </label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    formControlName="lastName"
+                    placeholder="Your last name"
+                    [class]="isFieldInvalid('lastName') ? 'input-field input-error' : 'input-field'"
+                  />
+                  <div *ngIf="isFieldInvalid('lastName')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('lastName') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                  <label for="email" class="text-sm font-medium text-gray-700 block">
+                    Email Address *
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    formControlName="email"
+                    placeholder="your@email.com"
+                    [class]="isFieldInvalid('email') ? 'input-field input-error' : 'input-field'"
+                  />
+                  <div *ngIf="isFieldInvalid('email')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('email') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="phone" class="text-sm font-medium text-gray-700 block">
+                    Phone Number *
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    formControlName="phone"
+                    placeholder="+1 (555) 123-4567"
+                    [class]="isFieldInvalid('phone') ? 'input-field input-error' : 'input-field'"
+                  />
+                  <div *ngIf="isFieldInvalid('phone')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('phone') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label for="location" class="text-sm font-medium text-gray-700 block">
+                  Location *
+                </label>
+                <input
+                  id="location"
+                  type="text"
+                  formControlName="location"
+                  placeholder="City, Country"
+                  [class]="isFieldInvalid('location') ? 'input-field input-error' : 'input-field'"
+                />
+                <div *ngIf="isFieldInvalid('location')" class="text-red-500 text-xs">
+                  {{ getErrorMessage('location') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Company Fields -->
+            <div *ngIf="selectedRole === 'service_company'" class="bg-blue-50 rounded-xl p-6 mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Company Information</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                  <label for="companyName" class="text-sm font-medium text-gray-700 block">
+                    Company Name *
+                  </label>
+                  <input
+                    id="companyName"
+                    type="text"
+                    formControlName="companyName"
+                    placeholder="Your company name"
+                    [class]="isFieldInvalid('companyName') ? 'input-field input-error' : 'input-field'"
+                  />
+                  <div *ngIf="isFieldInvalid('companyName')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('companyName') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="companySize" class="text-sm font-medium text-gray-700 block">
+                    Company Size *
+                  </label>
+                  <select
+                    id="companySize"
+                    formControlName="companySize"
+                    [class]="isFieldInvalid('companySize') ? 'input-field input-error' : 'input-field'"
+                  >
+                    <option value="">Select company size</option>
+                    <option value="1-10">1-10 employees</option>
+                    <option value="11-50">11-50 employees</option>
+                    <option value="51-200">51-200 employees</option>
+                    <option value="201-500">201-500 employees</option>
+                    <option value="500+">500+ employees</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('companySize')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('companySize') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                  <label for="establishedYear" class="text-sm font-medium text-gray-700 block">
+                    Established Year *
+                  </label>
+                  <input
+                    id="establishedYear"
+                    type="number"
+                    formControlName="establishedYear"
+                    placeholder="2020"
+                    min="1900"
+                    [max]="2025"
+                    [class]="isFieldInvalid('establishedYear') ? 'input-field input-error' : 'input-field'"
+                  />
+                  <div *ngIf="isFieldInvalid('establishedYear')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('establishedYear') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="website" class="text-sm font-medium text-gray-700 block">
+                    Website
+                  </label>
+                  <input
+                    id="website"
+                    type="url"
+                    formControlName="website"
+                    placeholder="https://yourcompany.com"
+                    [class]="isFieldInvalid('website') ? 'input-field input-error' : 'input-field'"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label for="companyDescription" class="text-sm font-medium text-gray-700 block">
+                  Company Description *
+                </label>
+                <textarea
+                  id="companyDescription"
+                  formControlName="companyDescription"
+                  rows="3"
+                  placeholder="Describe your company, services, and expertise (minimum 50 characters)"
+                  [class]="isFieldInvalid('companyDescription') ? 'input-field input-error' : 'input-field'"
+                ></textarea>
+                <div *ngIf="isFieldInvalid('companyDescription')" class="text-red-500 text-xs">
+                  {{ getErrorMessage('companyDescription') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Freelancer Fields -->
+            <div *ngIf="selectedRole === 'freelancer'" class="bg-green-50 rounded-xl p-6 mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Professional Information</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                  <label for="specialization" class="text-sm font-medium text-gray-700 block">
+                    Specialization *
+                  </label>
+                  <select
+                    id="specialization"
+                    formControlName="specialization"
+                    [class]="isFieldInvalid('specialization') ? 'input-field input-error' : 'input-field'"
+                  >
+                    <option value="">Select specialization</option>
+                    <option value="frontend">Frontend Development</option>
+                    <option value="backend">Backend Development</option>
+                    <option value="fullstack">Full-Stack Development</option>
+                    <option value="mobile">Mobile Development</option>
+                    <option value="devops">DevOps & Cloud</option>
+                    <option value="ai-ml">AI & Machine Learning</option>
+                    <option value="data-science">Data Science</option>
+                    <option value="ui-ux">UI/UX Design</option>
+                    <option value="blockchain">Blockchain</option>
+                    <option value="cyber-security">Cyber Security</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('specialization')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('specialization') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="experienceLevel" class="text-sm font-medium text-gray-700 block">
+                    Experience Level *
+                  </label>
+                  <select
+                    id="experienceLevel"
+                    formControlName="experienceLevel"
+                    [class]="isFieldInvalid('experienceLevel') ? 'input-field input-error' : 'input-field'"
+                  >
+                    <option value="">Select experience level</option>
+                    <option value="entry">Entry Level (0-1 years)</option>
+                    <option value="junior">Junior (1-3 years)</option>
+                    <option value="mid">Mid-Level (3-5 years)</option>
+                    <option value="senior">Senior (5-8 years)</option>
+                    <option value="lead">Lead (8-12 years)</option>
+                    <option value="expert">Expert (12+ years)</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('experienceLevel')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('experienceLevel') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                 <label for="hourlyRate" class="text-sm font-medium text-gray-700 block">
+    Hourly Rate (EUR) *
+</label>
+                  <input
+                    id="hourlyRate"
+                    type="number"
+                    formControlName="hourlyRate"
+                    placeholder="50"
+                    min="1"
+                    [class]="isFieldInvalid('hourlyRate') ? 'input-field input-error' : 'input-field'"
+                  />
+                  <div *ngIf="isFieldInvalid('hourlyRate')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('hourlyRate') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="availableHours" class="text-sm font-medium text-gray-700 block">
+                    Available Hours/Week *
+                  </label>
+                  <select
+                    id="availableHours"
+                    formControlName="availableHours"
+                    [class]="isFieldInvalid('availableHours') ? 'input-field input-error' : 'input-field'"
+                  >
+                    <option value="">Select availability</option>
+                    <option value="part-time">Part-time (10-20 hours)</option>
+                    <option value="half-time">Half-time (20-30 hours)</option>
+                    <option value="full-time">Full-time (40+ hours)</option>
+                    <option value="flexible">Flexible</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('availableHours')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('availableHours') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label for="skills" class="text-sm font-medium text-gray-700 block">
+                  Skills & Technologies *
+                </label>
+                <textarea
+                  id="skills"
+                  formControlName="skills"
+                  rows="3"
+                  placeholder="List your skills and technologies (e.g., React, Node.js, Python, AWS, etc.)"
+                  [class]="isFieldInvalid('skills') ? 'input-field input-error' : 'input-field'"
+                ></textarea>
+                <div *ngIf="isFieldInvalid('skills')" class="text-red-500 text-xs">
+                  {{ getErrorMessage('skills') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Client Fields -->
+            <div *ngIf="selectedRole === 'client'" class="bg-purple-50 rounded-xl p-6 mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Project Requirements</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                  <label for="industry" class="text-sm font-medium text-gray-700 block">
+                    Industry *
+                  </label>
+                  <select
+                    id="industry"
+                    formControlName="industry"
+                    [class]="isFieldInvalid('industry') ? 'input-field input-error' : 'input-field'"
+                  >
+                    <option value="">Select industry</option>
+                    <option value="technology">Technology</option>
+                    <option value="finance">Finance & Banking</option>
+                    <option value="healthcare">Healthcare</option>
+                    <option value="education">Education</option>
+                    <option value="ecommerce">E-commerce</option>
+                    <option value="manufacturing">Manufacturing</option>
+                    <option value="real-estate">Real Estate</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="non-profit">Non-Profit</option>
+                    <option value="government">Government</option>
+                    <option value="startup">Startup</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('industry')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('industry') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="companyType" class="text-sm font-medium text-gray-700 block">
+                    Company Type *
+                  </label>
+                  <select
+                    id="companyType"
+                    formControlName="companyType"
+                    [class]="isFieldInvalid('companyType') ? 'input-field input-error' : 'input-field'"
+                  >
+                    <option value="">Select company type</option>
+                    <option value="startup">Startup</option>
+                    <option value="small-business">Small Business</option>
+                    <option value="medium-enterprise">Medium Enterprise</option>
+                    <option value="large-enterprise">Large Enterprise</option>
+                    <option value="agency">Agency</option>
+                    <option value="non-profit">Non-Profit</option>
+                    <option value="government">Government</option>
+                    <option value="individual">Individual</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('companyType')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('companyType') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="space-y-1">
+                  <label for="projectBudgetRange" class="text-sm font-medium text-gray-700 block">
+                    Typical Project Budget *
+                  </label>
+                                <select
+                      id="projectBudgetRange"
+                      formControlName="projectBudgetRange"
+                      [class]="isFieldInvalid('projectBudgetRange') ? 'input-field input-error' : 'input-field'"
+                  >
+                      <option value="">Select budget range</option>
+                      <option value="under-5k">Under €5,000</option>
+                      <option value="5k-15k">€5,000 - €15,000</option>
+                      <option value="15k-50k">€15,000 - €50,000</option>
+                      <option value="50k-100k">€50,000 - €100,000</option>
+                      <option value="100k-250k">€100,000 - €250,000</option>
+                      <option value="over-250k">Over €250,000</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('projectBudgetRange')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('projectBudgetRange') }}
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label for="preferredProjectDuration" class="text-sm font-medium text-gray-700 block">
+                    Preferred Project Duration *
+                  </label>
+                  <select
+                    id="preferredProjectDuration"
+                    formControlName="preferredProjectDuration"
+                    [class]="isFieldInvalid('preferredProjectDuration') ? 'input-field input-error' : 'input-field'"
+                  >
+                    <option value="">Select duration</option>
+                    <option value="short-term">Short-term (1-3 months)</option>
+                    <option value="medium-term">Medium-term (3-6 months)</option>
+                    <option value="long-term">Long-term (6-12 months)</option>
+                    <option value="ongoing">Ongoing (12+ months)</option>
+                    <option value="flexible">Flexible</option>
+                  </select>
+                  <div *ngIf="isFieldInvalid('preferredProjectDuration')" class="text-red-500 text-xs">
+                    {{ getErrorMessage('preferredProjectDuration') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="space-y-3">
+              <div class="flex items-start">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  formControlName="terms"
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded mt-1"
+                />
+                <label for="terms" class="ml-2 block text-sm text-gray-700">
+                  I agree to the <a href="#" class="text-primary-600 hover:text-primary-800">Terms of Service</a> 
+                  and <a href="#" class="text-primary-600 hover:text-primary-800">Privacy Policy</a> *
+                </label>
+              </div>
+              <div *ngIf="isFieldInvalid('terms')" class="text-red-500 text-xs ml-6">
+                You must agree to the terms and conditions
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation Buttons -->
+          <div class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+            <button
+              *ngIf="currentStep > 1"
+              type="button"
+              (click)="previousStep()"
+              class="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              Previous
+            </button>
+            <div *ngIf="currentStep === 1"></div>
+
+            <button
+              *ngIf="currentStep < totalSteps"
+              type="button"
+              (click)="nextStep()"
+              class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+            >
+              Next
+            </button>
+
+            <button
+              *ngIf="currentStep === totalSteps"
+              type="submit"
+              [disabled]="isLoading"
+              class="btn-primary flex items-center justify-center px-8 py-2"
+            >
+              <svg *ngIf="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span *ngIf="!isLoading">Create Account</span>
+              <span *ngIf="isLoading">Creating Account...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="bg-gray-50 px-8 py-6 border-t border-gray-200">
+        <p class="text-center text-sm text-gray-600">
+          Already have an account?
+          <button
+            type="button"
+            (click)="onLogin()"
+            class="btn-secondary ml-1"
+          >
+            Sign In
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

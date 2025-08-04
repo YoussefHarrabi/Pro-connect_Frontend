@@ -1,0 +1,183 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Shared Navbar -->
+  <app-shared-navbar [config]="navbarConfig"></app-shared-navbar>
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Chat Header -->
+    <div class="bg-white rounded-t-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-gray-900">{{ 'aiAssistant' | translate }}</h1>
+            <p class="text-sm text-gray-500">{{ 'aiAssistantDescription' | translate }}</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <!-- Language Switch -->
+          <button
+            (click)="switchLanguage()"
+            class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors duration-200"
+          >
+            {{ currentLanguage === 'en' ? 'FR' : 'EN' }}
+          </button>
+          
+          <!-- Clear Chat -->
+          <button
+            (click)="clearChat()"
+            class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
+          >
+            {{ 'clearChat' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Messages Container -->
+    <div class="bg-white border-l border-r border-gray-200 h-96 overflow-y-auto" #messagesContainer>
+      <div class="p-4 space-y-4">
+        <!-- Messages -->
+        <div *ngFor="let message of messages" 
+             [class]="message.isUser ? 'flex justify-end' : 'flex justify-start'">
+          <div [class]="message.isUser ? 
+                       'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-green-500 text-white' : 
+                       'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100 text-gray-800'">
+            <p class="text-sm">{{ message.text }}</p>
+            <p class="text-xs mt-1 opacity-70">{{ formatTime(message.timestamp) }}</p>
+          </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div *ngIf="isTyping" class="flex justify-start">
+          <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100">
+            <div class="flex space-x-1">
+              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="bg-white rounded-b-lg shadow-sm border border-gray-200 p-4">
+      <div class="flex items-center space-x-4">
+        <div class="flex-1">
+          <textarea
+            [(ngModel)]="currentMessage"
+            (keypress)="onKeyPress($event)"
+            [placeholder]="'typeMessage' | translate"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+            rows="2"
+          ></textarea>
+        </div>
+        <button
+          (click)="sendMessage()"
+          [disabled]="!currentMessage.trim() || isTyping"
+          class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ 'quickActions' | translate }}</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <button
+          (click)="sendQuickActionProject()"
+          class="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900">{{ 'postProject' | translate }}</p>
+              <p class="text-sm text-gray-500">{{ 'postProjectDescription' | translate }}</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          (click)="sendQuickActionFreelancer()"
+          class="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900">{{ 'findFreelancer' | translate }}</p>
+              <p class="text-sm text-gray-500">{{ 'findFreelancerDescription' | translate }}</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          (click)="sendQuickActionBudget()"
+          class="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900">{{ 'budgetHelp' | translate }}</p>
+              <p class="text-sm text-gray-500">{{ 'budgetHelpDescription' | translate }}</p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Features Info -->
+    <div class="mt-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ 'aiCapabilities' | translate }}</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex items-center space-x-3">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="text-sm text-gray-700">{{ 'bilingualSupport' | translate }}</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="text-sm text-gray-700">{{ 'projectMatching' | translate }}</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="text-sm text-gray-700">{{ 'budgetEstimation' | translate }}</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="text-sm text-gray-700">{{ 'skillRecommendations' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Footer -->
+  <app-shared-footer></app-shared-footer>
+</div>

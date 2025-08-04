@@ -1,0 +1,1128 @@
+<div class="min-h-screen bg-white">
+  <!-- Shared Navbar -->
+  <app-shared-navbar [config]="navbarConfig"></app-shared-navbar>
+
+  <!-- Back Button (only for viewing other profiles) -->
+  <div *ngIf="isViewingOtherProfile" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+    <button
+      (click)="goBackToTalentDiscovery()"
+      class="flex items-center text-green-600 hover:text-green-800 font-medium transition-colors duration-200"
+    >
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      {{ 'backToTalentDiscovery' | translate }}
+    </button>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Profile Header Section -->
+    <div class="bg-white rounded-lg border border-gray-200 p-8 mb-6">
+      <div class="flex items-start justify-between mb-6">
+        <div class="flex items-start space-x-6">
+          <!-- Avatar -->
+          <div class="relative">
+            <img
+              [src]="currentUser.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'"
+              [alt]="currentUser.username"
+              class="w-24 h-24 rounded-full object-cover border-4 border-gray-100"
+            />
+            <div *ngIf="currentUser.isVerified" 
+                 class="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1.5"
+                 [title]="'verified' | translate">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+          </div>
+          
+          <!-- Profile Info -->
+          <div class="flex-1">
+            <div class="flex items-center mb-2">
+              <h1 class="text-2xl font-bold text-gray-900 mr-3">{{ '@' + currentUser.username }}</h1>
+              <span *ngIf="currentUser.isVerified" class="text-green-500" [title]="'verified' | translate">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+              </span>
+            </div>
+            
+            <div class="flex items-center mb-3">
+              <span class="text-gray-600 mr-2">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                {{ currentUser.location || 'Location not specified' }}
+              </span>
+              <span class="text-gray-400">–</span>
+              <span class="text-gray-600 ml-2">{{ formatDate(currentUser.lastActive) }} {{ 'localTime' | translate }}</span>
+            </div>
+            
+            <div class="flex items-center space-x-4 mb-4">
+              <div class="flex items-center">
+                <div class="flex">
+                  <svg *ngFor="let star of getStarArray(currentUser.rating); let i = index"
+                       class="w-4 h-4"
+                       [class.text-yellow-400]="star === 1"
+                       [class.text-gray-300]="star === 0"
+                       fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                </div>
+                <span class="ml-2 text-sm font-medium text-gray-900">{{ currentUser.rating }}</span>
+              </div>
+              
+              <span *ngIf="currentUser.hourlyRate" class="text-lg font-bold text-gray-900">
+                €{{ currentUser.hourlyRate }}/hr
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex space-x-3">
+          <button
+            *ngIf="isViewingOtherProfile"
+            (click)="contactTalent()"
+            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors duration-200"
+          >
+            {{ 'contactTalent' | translate }}
+          </button>
+          
+          <button
+            *ngIf="!isViewingOtherProfile"
+            (click)="togglePublicView()"
+            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors duration-200"
+          >
+            {{ isPublicView ? ('editProfile' | translate) : ('seePublicView' | translate) }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- Bio Section -->
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-3">{{ currentUser.role | titlecase }} {{ 'developer' | translate }}</h2>
+        <p class="text-gray-700 leading-relaxed">
+          {{ currentUser.bio || ('noBio' | translate) }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      
+      <!-- Left Sidebar -->
+      <div class="lg:col-span-1 space-y-6">
+        
+        <!-- Resume Upload Section -->
+        <div *ngIf="!isViewingOtherProfile && !isPublicView" class="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 class="font-bold text-gray-900 mb-4">{{ 'resume' | translate }}</h4>
+          
+          <div *ngIf="!currentUser.resumeFileName" class="text-center">
+            <input
+              type="file"
+              #resumeInput
+              (change)="onResumeFileSelected($event)"
+              accept=".pdf"
+              class="hidden"
+            />
+            <button
+              (click)="resumeInput.click()"
+              class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-green-400 hover:text-green-600 transition-colors duration-200"
+            >
+              <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+              </svg>
+              <p class="text-sm font-medium">{{ 'uploadResume' | translate }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ 'pdfOnly' | translate }}</p>
+            </button>
+          </div>
+          
+          <div *ngIf="currentUser.resumeFileName" class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span class="text-sm font-medium text-green-800">{{ currentUser.resumeFileName }}</span>
+              </div>
+              <div class="flex space-x-2">
+                <button
+                  (click)="downloadResume()"
+                  class="text-green-600 hover:text-green-800"
+                  [title]="'download' | translate"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </button>
+                <button
+                  (click)="removeResume()"
+                  class="text-red-600 hover:text-red-800"
+                  [title]="'remove' | translate"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500">
+              {{ 'uploadedOn' | translate }} {{ formatDate(currentUser.resumeUploadedDate!) }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Work Hours Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 class="font-bold text-gray-900 mb-4">{{ 'hoursPerWeek' | translate }}</h4>
+          <p class="text-gray-600">{{ 'moreThan30Hours' | translate }}</p>
+          <p class="text-sm text-gray-500 mt-2">{{ 'noContractPreference' | translate }}</p>
+        </div>
+
+        <!-- Languages Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-bold text-gray-900">{{ 'languages' | translate }}</h4>
+            <button
+              *ngIf="!isViewingOtherProfile && !isPublicView"
+              (click)="openLanguagesModal()"
+              class="text-green-600 hover:text-green-800 font-medium text-sm"
+            >
+              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="space-y-2">
+            <div *ngFor="let language of currentUser.languages" class="flex items-center justify-between">
+              <span class="text-gray-700">{{ language }}:</span>
+              <span class="text-sm text-gray-500">{{ 'fluent' | translate }}</span>
+            </div>
+          </div>
+          <div *ngIf="currentUser.languages.length === 0" class="text-center py-4">
+            <p class="text-gray-500 text-sm">{{ 'noLanguages' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Education Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-bold text-gray-900">{{ 'education' | translate }}</h4>
+            <button
+              *ngIf="!isViewingOtherProfile && !isPublicView"
+              (click)="openEducationModal()"
+              class="text-green-600 hover:text-green-800 font-medium text-sm"
+            >
+              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              {{ 'add' | translate }}
+            </button>
+          </div>
+          
+          <div *ngIf="currentUser.education && currentUser.education.length > 0" class="space-y-4">
+            <div *ngFor="let edu of currentUser.education" class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
+              <h5 class="font-semibold text-gray-900">{{ edu.degree }}</h5>
+              <p class="text-green-600 font-medium">{{ edu.institution }}</p>
+              <p class="text-sm text-gray-500">{{ edu.startYear }} - {{ edu.endYear || ('present' | translate) }}</p>
+              <p *ngIf="edu.description" class="text-sm text-gray-600 mt-1">{{ edu.description }}</p>
+            </div>
+          </div>
+          
+          <div *ngIf="!currentUser.education || currentUser.education.length === 0" class="text-center py-4">
+            <p class="text-gray-500 text-sm">{{ 'noEducation' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Certifications Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-bold text-gray-900">{{ 'certifications' | translate }}</h4>
+            <button
+              *ngIf="!isViewingOtherProfile && !isPublicView"
+              (click)="openCertificationModal()"
+              class="text-green-600 hover:text-green-800 font-medium text-sm"
+            >
+              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              {{ 'add' | translate }}
+            </button>
+          </div>
+          
+          <div *ngIf="currentUser.certifications && currentUser.certifications.length > 0" class="space-y-3">
+            <div *ngFor="let cert of currentUser.certifications" class="flex items-start space-x-3">
+              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h5 class="font-semibold text-gray-900">{{ cert.name }}</h5>
+                <p class="text-sm text-gray-600">{{ cert.issuer }}</p>
+                <p class="text-xs text-gray-500">{{ formatDate(cert.issueDate) }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="!currentUser.certifications || currentUser.certifications.length === 0" class="text-center py-4">
+            <p class="text-gray-500 text-sm">{{ 'noCertifications' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Social Links Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-bold text-gray-900">{{ 'socialLinks' | translate }}</h4>
+            <button
+              *ngIf="!isViewingOtherProfile && !isPublicView"
+              (click)="openSocialLinksModal()"
+              class="text-green-600 hover:text-green-800 font-medium text-sm"
+            >
+              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div *ngIf="currentUser.socialLinks" class="space-y-3">
+            <div *ngIf="currentUser.socialLinks.github" class="flex items-center space-x-3">
+              <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+              </svg>
+              <a [href]="currentUser.socialLinks.github" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                GitHub
+              </a>
+            </div>
+            
+            <div *ngIf="currentUser.socialLinks.stackoverflow" class="flex items-center space-x-3">
+              <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M12.658 14.577v-4.27h1.423V16H1.23v-5.693h1.424v4.27h9.004zm-8.583-1.423h7.16V11.73h-7.16v1.424zm.173-3.235l6.987 1.46.3-1.38L4.55 8.54l-.302 1.379zm.906-3.37l6.47 3.02.602-1.295-6.47-3.02-.602 1.295zm1.81-3.19l5.478 4.57.906-1.086L7.87 2.28l-.906 1.086zM10.502 0L9.338.863l4.27 5.735 1.164-.862L10.502 0z"/>
+              </svg>
+              <a [href]="currentUser.socialLinks.stackoverflow" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                Stack Overflow
+              </a>
+            </div>
+            
+            <div *ngIf="currentUser.socialLinks.linkedin" class="flex items-center space-x-3">
+              <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.338 16.338H13.67V12.16c0-.995-.017-2.277-1.387-2.277-1.39 0-1.601 1.086-1.601 2.207v4.248H8.014v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.778 3.203 4.092v4.711zM5.005 6.575a1.548 1.548 0 11-.003-3.096 1.548 1.548 0 01.003 3.096zm-1.337 9.763H6.34v-8.59H3.667v8.59zM17.668 1H2.328C1.595 1 1 1.581 1 2.298v15.403C1 18.418 1.595 19 2.328 19h15.34c.734 0 1.332-.582 1.332-1.299V2.298C19 1.581 18.402 1 17.668 1z" clip-rule="evenodd"></path>
+              </svg>
+              <a [href]="currentUser.socialLinks.linkedin" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                LinkedIn
+              </a>
+            </div>
+            
+            <div *ngIf="currentUser.socialLinks.website" class="flex items-center space-x-3">
+              <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+              </svg>
+              <a [href]="currentUser.socialLinks.website" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                {{ 'personalWebsite' | translate }}
+              </a>
+            </div>
+          </div>
+          
+          <div *ngIf="!hasSocialLinks()" class="text-center py-4">
+            <p class="text-gray-500 text-sm">{{ 'noSocialLinks' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Verifications Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 class="font-bold text-gray-900 mb-4">{{ 'verifications' | translate }}</h4>
+          <div class="space-y-3">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-sm text-gray-700">{{ 'idVerified' | translate }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column - Work History & Portfolio -->
+      <div class="lg:col-span-3 space-y-6">
+        
+        <!-- Portfolio Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900">{{ 'portfolio' | translate }}</h3>
+            <div class="flex items-center space-x-2">
+              <button
+                *ngIf="!isViewingOtherProfile && !isPublicView"
+                (click)="addPortfolioItem()"
+                class="text-green-600 hover:text-green-800 font-medium"
+              >
+                <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                {{ 'addPortfolio' | translate }}
+              </button>
+            </div>
+          </div>
+          
+          <!-- Portfolio Tabs -->
+          <div class="flex border-b border-gray-200 mb-6">
+            <button class="px-4 py-2 text-sm font-medium text-gray-900 border-b-2 border-green-500">
+              {{ 'published' | translate }}
+            </button>
+            <button *ngIf="!isViewingOtherProfile" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 ml-4">
+              {{ 'drafts' | translate }}
+            </button>
+          </div>
+          
+          <!-- Portfolio Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              *ngFor="let item of currentUser.portfolio"
+              class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
+            >
+              <img
+                *ngIf="item.coverImage"
+                [src]="item.coverImage"
+                [alt]="item.title"
+                class="w-full h-40 object-cover"
+              />
+              <div class="p-4">
+                <h4 class="font-bold text-gray-900 mb-2">{{ item.title }}</h4>
+                <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ item.description }}</p>
+                <div class="flex items-center justify-between">
+                  <button
+                    *ngIf="item.projectUrl"
+                    (click)="openProject(item.projectUrl)"
+                    class="text-green-600 hover:text-green-800 text-sm font-medium"
+                  >
+                    {{ 'viewProject' | translate }} →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="currentUser.portfolio.length === 0" class="text-center py-12">
+            <p class="text-gray-500 mb-4">{{ 'noPortfolio' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Work History Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900">{{ 'workHistory' | translate }}</h3>
+            <button
+              *ngIf="!isViewingOtherProfile && !isPublicView"
+              (click)="openWorkHistoryModal()"
+              class="text-green-600 hover:text-green-800 font-medium text-sm"
+            >
+              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              {{ 'add' | translate }}
+            </button>
+          </div>
+          
+          <div *ngIf="currentUser.experience.length === 0" class="text-center py-12">
+            <p class="text-gray-500">{{ 'noWorkHistory' | translate }}</p>
+          </div>
+          
+          <div *ngIf="currentUser.experience.length > 0" class="space-y-6">
+            <div
+              *ngFor="let exp of currentUser.experience"
+              class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
+            >
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h4 class="font-bold text-gray-900">{{ exp.title }}</h4>
+                  <p class="text-green-600 font-medium">{{ exp.company }}</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <span class="text-sm text-gray-500">
+                    {{ formatDate(exp.startDate) }} - 
+                    {{ exp.isCurrent ? ('present' | translate) : formatDate(exp.endDate!) }}
+                  </span>
+                  <button
+                    *ngIf="!isViewingOtherProfile && !isPublicView"
+                    (click)="openWorkHistoryModal(exp)"
+                    class="text-green-600 hover:text-green-800 text-sm"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <p class="text-gray-700">{{ exp.description }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills Section -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900">{{ 'skills' | translate }}</h3>
+            <button
+              *ngIf="!isViewingOtherProfile && !isPublicView"
+              (click)="openSkillsModal()"
+              class="text-green-600 hover:text-green-800 font-medium text-sm"
+            >
+              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="flex flex-wrap gap-2">
+            <span
+              *ngFor="let skill of currentUser.skills"
+              class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium"
+            >
+              {{ skill }}
+            </span>
+          </div>
+          
+          <div *ngIf="currentUser.skills.length === 0" class="text-center py-8">
+            <p class="text-gray-500">{{ 'noSkills' | translate }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Education Modal -->
+  <div *ngIf="showEducationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">
+            {{ isEditingEducation ? 'editEducation' : 'addEducation' | translate }}
+          </h3>
+          <button
+            (click)="closeEducationModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form [formGroup]="educationForm" (ngSubmit)="saveEducation()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'degree' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="degree"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Bachelor of Science in Computer Science"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'institution' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="institution"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="University Name"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'startYear' | translate }} *
+                </label>
+                <input
+                  type="number"
+                  formControlName="startYear"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="2018"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'endYear' | translate }}
+                </label>
+                <input
+                  type="number"
+                  formControlName="endYear"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="2022"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'description' | translate }}
+              </label>
+              <textarea
+                formControlName="description"
+                rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Brief description of your studies..."
+              ></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                GPA
+              </label>
+              <input
+                type="text"
+                formControlName="gpa"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="3.8"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closeEducationModal()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              {{ 'cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="educationForm.invalid || isLoading"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isEditingEducation ? 'update' : 'add' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certification Modal -->
+  <div *ngIf="showCertificationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">
+            {{ isEditingCertification ? 'editCertification' : 'addCertification' | translate }}
+          </h3>
+          <button
+            (click)="closeCertificationModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form [formGroup]="certificationForm" (ngSubmit)="saveCertification()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'certificationName' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="name"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="AWS Certified Solutions Architect"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'issuer' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="issuer"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Amazon Web Services"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'issueDate' | translate }} *
+                </label>
+                <input
+                  type="date"
+                  formControlName="issueDate"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'expiryDate' | translate }}
+                </label>
+                <input
+                  type="date"
+                  formControlName="expiryDate"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'credentialId' | translate }}
+              </label>
+              <input
+                type="text"
+                formControlName="credentialId"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Certificate ID"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'credentialUrl' | translate }}
+              </label>
+              <input
+                type="url"
+                formControlName="credentialUrl"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="https://example.com/certificate"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closeCertificationModal()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              {{ 'cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="certificationForm.invalid || isLoading"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isEditingCertification ? 'update' : 'add' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Languages Modal -->
+  <div *ngIf="showLanguagesModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">
+            {{ 'editLanguages' | translate }}
+          </h3>
+          <button
+            (click)="closeLanguagesModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form [formGroup]="languagesForm" (ngSubmit)="saveLanguages()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'languages' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="languages"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="English, French, Spanish"
+              />
+              <p class="text-xs text-gray-500 mt-1">{{ 'languagesHint' | translate }}</p>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closeLanguagesModal()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              {{ 'cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="languagesForm.invalid || isLoading"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ 'update' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Social Links Modal -->
+  <div *ngIf="showSocialLinksModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">
+            {{ 'editSocialLinks' | translate }}
+          </h3>
+          <button
+            (click)="closeSocialLinksModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form [formGroup]="socialLinksForm" (ngSubmit)="saveSocialLinks()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                GitHub
+              </label>
+              <input
+                type="url"
+                formControlName="github"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="https://github.com/username"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Stack Overflow
+              </label>
+              <input
+                type="url"
+                formControlName="stackoverflow"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="https://stackoverflow.com/users/123456/username"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                LinkedIn
+              </label>
+              <input
+                type="url"
+                formControlName="linkedin"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="https://linkedin.com/in/username"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'personalWebsite' | translate }}
+              </label>
+              <input
+                type="url"
+                formControlName="website"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="https://yourwebsite.com"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closeSocialLinksModal()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              {{ 'cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="socialLinksForm.invalid || isLoading"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ 'update' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portfolio Item Modal -->
+  <div *ngIf="showPortfolioModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">
+            {{ editingPortfolioItem ? 'editPortfolioItem' : 'addPortfolioItem' | translate }}
+          </h3>
+          <button
+            (click)="closePortfolioModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form [formGroup]="portfolioForm" (ngSubmit)="savePortfolioItem()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'projectTitle' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="title"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="My Awesome Project"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'description' | translate }} *
+              </label>
+              <textarea
+                formControlName="description"
+                rows="4"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Describe your project..."
+              ></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'projectUrl' | translate }}
+              </label>
+              <input
+                type="url"
+                formControlName="projectUrl"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="https://project-demo.com"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'imageUrl' | translate }}
+              </label>
+              <input
+                type="url"
+                formControlName="imageUrl"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="https://example.com/project-image.jpg"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'technologies' | translate }}
+              </label>
+              <input
+                type="text"
+                formControlName="technologies"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="React, Node.js, MongoDB"
+              />
+              <p class="text-xs text-gray-500 mt-1">{{ 'separateWithCommas' | translate }}</p>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closePortfolioModal()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              {{ 'cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="portfolioForm.invalid || isLoading"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ editingPortfolioItem ? 'update' : 'add' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Work History Modal -->
+  <div *ngIf="showWorkHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">
+            {{ editingWorkHistory ? 'editWorkHistory' : 'addWorkHistory' | translate }}
+          </h3>
+          <button
+            (click)="closeWorkHistoryModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form [formGroup]="workHistoryForm" (ngSubmit)="saveWorkHistory()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'jobTitle' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="title"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Senior Developer"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'company' | translate }} *
+              </label>
+              <input
+                type="text"
+                formControlName="company"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Tech Company Inc."
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'startDate' | translate }} *
+                </label>
+                <input
+                  type="date"
+                  formControlName="startDate"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'endDate' | translate }}
+                </label>
+                <input
+                  type="date"
+                  formControlName="endDate"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                <div class="mt-2">
+                  <label class="flex items-center">
+                    <input type="checkbox" formControlName="isCurrent" class="mr-2">
+                    <span class="text-sm text-gray-600">{{ 'currentPosition' | translate }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'description' | translate }}
+              </label>
+              <textarea
+                formControlName="description"
+                rows="4"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Describe your role and achievements..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closeWorkHistoryModal()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              {{ 'cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="workHistoryForm.invalid || isLoading"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ editingWorkHistory ? 'update' : 'add' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills Modal -->
+  <div *ngIf="showSkillsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">
+            {{ 'editSkills' | translate }}
+          </h3>
+          <button
+            (click)="closeSkillsModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <form [formGroup]="skillsForm" (ngSubmit)="saveSkills()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'skills' | translate }}
+              </label>
+              <textarea 
+                formControlName="skillsText" 
+                rows="6" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="{{ 'enterSkillsPlaceholder' | translate }}"></textarea>
+              <p class="text-xs text-gray-500 mt-1">{{ 'separateSkillsWithCommas' | translate }}</p>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'currentSkills' | translate }}</h4>
+              <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-3 bg-gray-50 rounded-lg">
+                <span *ngFor="let skill of currentUser.skills" class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  {{ skill }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closeSkillsModal()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              {{ 'cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ 'update' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Footer -->
+  <app-shared-footer></app-shared-footer>
+</div>

@@ -1,0 +1,421 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Shared Navbar -->
+  <app-shared-navbar [config]="navbarConfig"></app-shared-navbar>
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Progress Steps -->
+    <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
+      <div class="flex items-center justify-between">
+        <div *ngFor="let step of steps; let i = index" class="flex items-center">
+          <div [class]="currentStep >= i + 1 
+            ? 'w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium'
+            : 'w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium'">
+            {{ i + 1 }}
+          </div>
+          <div class="ml-3 flex flex-col">
+            <span [class]="currentStep >= i + 1 ? 'text-primary-600 font-medium' : 'text-gray-500'" class="text-sm">
+              {{ step.title | translate }}
+            </span>
+            <span class="text-xs text-gray-400">{{ step.description | translate }}</span>
+          </div>
+          <div *ngIf="i < steps.length - 1" [class]="currentStep > i + 1 ? 'bg-primary-600' : 'bg-gray-200'" class="w-16 h-0.5 mx-6"></div>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Step 1: Project Basics -->
+      <div *ngIf="currentStep === 1" class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">{{ 'projectPosting.steps.projectDetails' | translate }}</h2>
+        
+        <div class="space-y-6">
+          <!-- Project Title -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              {{ 'projectPosting.form.projectTitle' | translate }} *
+            </label>
+            <input
+              type="text"
+              formControlName="title"
+              [placeholder]="'projectPosting.form.projectTitlePlaceholder' | translate"
+              [class]="isFieldInvalid('title') ? 'input-field input-error' : 'input-field'"
+            />
+            <p class="text-xs text-gray-500 mt-1">{{ 'projectPosting.form.projectTitleHelp' | translate }}</p>
+            <div *ngIf="isFieldInvalid('title')" class="text-red-500 text-sm mt-1">
+              {{ getErrorMessage('title') }}
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Category *
+            </label>
+            <select formControlName="category" [class]="isFieldInvalid('category') ? 'input-field input-error' : 'input-field'">
+              <option value="">Select a category</option>
+              <option *ngFor="let cat of categories" [value]="cat.value">
+                {{ cat.icon }} {{ cat.label }}
+              </option>
+            </select>
+            <div *ngIf="isFieldInvalid('category')" class="text-red-500 text-sm mt-1">
+              {{ getErrorMessage('category') }}
+            </div>
+          </div>
+
+          <!-- Project Description -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Project Description *
+            </label>
+            <textarea
+              formControlName="description"
+              rows="6"
+              placeholder="Describe your project in detail. Include what you want to achieve, any specific requirements, technologies you prefer, and any other relevant information..."
+              [class]="isFieldInvalid('description') ? 'input-field input-error' : 'input-field'"
+            ></textarea>
+            <p class="text-xs text-gray-500 mt-1">The more details you provide, the better proposals you'll receive</p>
+            <div *ngIf="isFieldInvalid('description')" class="text-red-500 text-sm mt-1">
+              {{ getErrorMessage('description') }}
+            </div>
+          </div>
+
+          <!-- Skills Required -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Skills Required *
+            </label>
+            <div class="space-y-3">
+              <div class="flex flex-wrap gap-2 min-h-[40px] p-3 border border-gray-300 rounded-lg bg-gray-50">
+                <span
+                  *ngFor="let skill of selectedSkills"
+                  class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800"
+                >
+                  {{ skill }}
+                  <button
+                    type="button"
+                    (click)="removeSkill(skill)"
+                    class="ml-2 text-primary-600 hover:text-primary-800"
+                  >
+                    ×
+                  </button>
+                </span>
+                <div *ngIf="selectedSkills.length === 0" class="text-gray-500 text-sm py-1">
+                  Select skills from below
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-32 overflow-y-auto">
+                <button
+                  *ngFor="let skill of availableSkills"
+                  type="button"
+                  (click)="toggleSkill(skill)"
+                  [class]="selectedSkills.includes(skill)
+                    ? 'bg-primary-100 border-primary-500 text-primary-700'
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'"
+                  class="px-2 py-1 border rounded text-xs font-medium transition-colors duration-200"
+                >
+                  {{ skill }}
+                </button>
+              </div>
+            </div>
+            <div *ngIf="selectedSkills.length === 0 && projectForm.get('skills')?.touched" class="text-red-500 text-sm mt-1">
+              Please select at least one skill
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Budget & Timeline -->
+      <div *ngIf="currentStep === 2" class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Budget & Timeline</h2>
+        
+        <div class="space-y-6">
+          <!-- Project Type -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">
+              How do you want to pay? *
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                (click)="selectProjectType('fixed')"
+                [class]="projectForm.get('projectType')?.value === 'fixed'
+                  ? 'border-2 border-primary-500 bg-primary-50'
+                  : 'border-2 border-gray-200 hover:border-primary-300'"
+                class="cursor-pointer rounded-xl p-6 transition-all duration-200"
+              >
+                <div class="flex items-start space-x-4">
+                  <div class="text-2xl">💰</div>
+                  <div>
+                    <h3 class="font-semibold text-gray-800 mb-1">Fixed Price</h3>
+                    <p class="text-gray-600 text-sm">Pay a set amount for the entire project</p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                (click)="selectProjectType('hourly')"
+                [class]="projectForm.get('projectType')?.value === 'hourly'
+                  ? 'border-2 border-primary-500 bg-primary-50'
+                  : 'border-2 border-gray-200 hover:border-primary-300'"
+                class="cursor-pointer rounded-xl p-6 transition-all duration-200"
+              >
+                <div class="flex items-start space-x-4">
+                  <div class="text-2xl">⏰</div>
+                  <div>
+                    <h3 class="font-semibold text-gray-800 mb-1">Hourly Rate</h3>
+                    <p class="text-gray-600 text-sm">Pay by the hour with time tracking</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Budget Range -->
+          <div *ngIf="projectForm.get('projectType')?.value">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              {{ projectForm.get('projectType')?.value === 'fixed' ? 'Budget Range' : 'Hourly Budget Range' }} *
+            </label>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <input
+                  type="number"
+                  formControlName="budgetMin"
+                  placeholder="Minimum budget (€)"
+                  class="input-field"
+                />
+              </div>
+              <div>
+                <input
+                  type="number"
+                  formControlName="budgetMax"
+                  placeholder="Maximum budget (€)"
+                  class="input-field"
+                />
+              </div>
+            </div>
+            <div class="flex items-center mt-2">
+              <input
+                id="negotiable"
+                type="checkbox"
+                formControlName="budgetNegotiable"
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label for="negotiable" class="ml-2 text-sm text-gray-700">
+                Budget is negotiable
+              </label>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              How long will this project take? *
+            </label>
+            <select formControlName="timeline" class="input-field">
+              <option value="">Select timeline</option>
+              <option value="less-than-1-week">Less than 1 week</option>
+              <option value="1-2-weeks">1-2 weeks</option>
+              <option value="2-4-weeks">2-4 weeks</option>
+              <option value="1-2-months">1-2 months</option>
+              <option value="2-4-months">2-4 months</option>
+              <option value="more-than-4-months">More than 4 months</option>
+            </select>
+          </div>
+
+          <!-- Complexity Level -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">
+              What level of experience will it need? *
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div
+                *ngFor="let level of complexityLevels"
+                (click)="selectComplexity(level.value)"
+                [class]="projectForm.get('complexity')?.value === level.value
+                  ? 'border-2 border-primary-500 bg-primary-50'
+                  : 'border-2 border-gray-200 hover:border-primary-300'"
+                class="cursor-pointer rounded-lg p-4 transition-all duration-200 text-center"
+              >
+                <div class="text-2xl mb-2">{{ level.icon }}</div>
+                <h3 class="font-semibold text-gray-800 mb-1">{{ level.label }}</h3>
+                <p class="text-gray-600 text-xs">{{ level.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Additional Details -->
+      <div *ngIf="currentStep === 3" class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Additional Details</h2>
+        
+        <div class="space-y-6">
+          <!-- Preferred Talent Type -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">
+              What type of talent do you prefer?
+            </label>
+            <div class="flex space-x-4">
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  value="freelancer"
+                  formControlName="preferredTalentType"
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                />
+                <span class="ml-2 text-sm text-gray-700">Individual Freelancer</span>
+              </label>
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  value="agency"
+                  formControlName="preferredTalentType"
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                />
+                <span class="ml-2 text-sm text-gray-700">Agency</span>
+              </label>
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  value="both"
+                  formControlName="preferredTalentType"
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                />
+                <span class="ml-2 text-sm text-gray-700">Both</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Experience Level -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Minimum experience level required
+            </label>
+            <select formControlName="experienceLevel" class="input-field">
+              <option value="entry">Entry Level</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="expert">Expert</option>
+            </select>
+          </div>
+
+          <!-- Location Preferences -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Location preference
+            </label>
+            <input
+              type="text"
+              formControlName="location"
+              placeholder="e.g. Paris, France or Worldwide"
+              class="input-field"
+            />
+            <div class="flex items-center mt-2">
+              <input
+                id="remote"
+                type="checkbox"
+                formControlName="isRemote"
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label for="remote" class="ml-2 text-sm text-gray-700">
+                Remote work is acceptable
+              </label>
+            </div>
+          </div>
+
+          <!-- Additional Options -->
+          <div class="space-y-3">
+            <div class="flex items-center">
+              <input
+                id="urgent"
+                type="checkbox"
+                formControlName="isUrgent"
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label for="urgent" class="ml-2 text-sm text-gray-700">
+                This is an urgent project
+              </label>
+            </div>
+
+            <div class="flex items-center">
+              <input
+                id="featured"
+                type="checkbox"
+                formControlName="isFeatured"
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label for="featured" class="ml-2 text-sm text-gray-700">
+                Make this a featured project
+                <span class="text-primary-600 font-medium">(+€25)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Project Deadline -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Application deadline (optional)
+            </label>
+            <input
+              type="date"
+              formControlName="deadline"
+              class="input-field"
+              [min]="today"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div class="flex justify-between items-center">
+        <button
+          *ngIf="currentStep > 1"
+          type="button"
+          (click)="previousStep()"
+          class="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          Previous
+        </button>
+        <div *ngIf="currentStep === 1"></div>
+
+        <div class="flex space-x-3">
+          <button
+            *ngIf="currentStep < totalSteps"
+            type="button"
+            (click)="nextStep()"
+            class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+          >
+            Next
+          </button>
+
+          <button
+            *ngIf="currentStep === totalSteps"
+            type="button"
+            (click)="saveDraft()"
+            [disabled]="isLoading"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+          >
+            Save Draft
+          </button>
+
+          <button
+            *ngIf="currentStep === totalSteps"
+            type="submit"
+            [disabled]="isLoading || projectForm.invalid"
+            class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors duration-200 flex items-center"
+          >
+            <svg *ngIf="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Publish Project
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Shared Footer -->
+  <app-shared-footer></app-shared-footer>
+</div>

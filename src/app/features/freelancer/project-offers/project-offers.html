@@ -1,0 +1,330 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Shared Navbar -->
+  <app-shared-navbar [config]="navbarConfig"></app-shared-navbar>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-xl shadow-sm border mb-8">
+      <nav class="flex space-x-8 px-6" aria-label="Tabs">
+        <button
+          (click)="switchTab('pending')"
+          [class]="activeTab === 'pending' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          {{ 'projectOffers.tabs.pending' | translate }} ({{ getPendingCount() }})
+        </button>
+        <button
+          (click)="switchTab('responded')"
+          [class]="activeTab === 'responded' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          {{ 'projectOffers.tabs.responded' | translate }} ({{ getRespondedCount() }})
+        </button>
+        <button
+          (click)="switchTab('all')"
+          [class]="activeTab === 'all' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          {{ 'projectOffers.tabs.all' | translate }} ({{ offers.length }})
+        </button>
+      </nav>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    </div>
+
+    <!-- Offers List -->
+    <div *ngIf="!isLoading" class="space-y-6">
+      <!-- Empty State -->
+      <div *ngIf="filteredOffers.length === 0" class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-4 4L9 5" />
+          </svg>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">{{ 'projectOffers.empty.title' | translate }}</h3>
+        <p class="mt-1 text-sm text-gray-500">{{ 'projectOffers.empty.description' | translate }}</p>
+        <div class="mt-6">
+          <a routerLink="/project-discovery" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+            {{ 'projectOffers.empty.browseProjects' | translate }}
+          </a>
+        </div>
+      </div>
+
+      <!-- Offer Cards -->
+      <div *ngFor="let offer of filteredOffers" class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden">
+        <!-- Expired Banner -->
+        <div *ngIf="isOfferExpired(offer)" class="bg-red-500 text-white text-center py-2 text-sm font-medium">
+          {{ 'projectOffers.status.expired' | translate }}
+        </div>
+
+        <!-- Urgency Banner -->
+        <div *ngIf="offer.status === 'pending' && getDaysUntilExpiry(offer) <= 2 && !isOfferExpired(offer)" class="bg-orange-500 text-white text-center py-2 text-sm font-medium">
+          {{ 'projectOffers.urgency.expiresIn' | translate }}: {{ getDaysUntilExpiry(offer) }} {{ 'projectOffers.urgency.days' | translate }}
+        </div>
+
+        <div class="p-6">
+          <!-- Offer Header -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+              <div class="flex items-center space-x-3 mb-2">
+                <h3 class="text-xl font-semibold text-gray-900">{{ offer.project.title }}</h3>
+                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusColor(offer.status)">
+                  {{ 'projectOffers.status.' + offer.status | translate }}
+                </span>
+              </div>
+              
+              <!-- Client Info -->
+              <div class="flex items-center space-x-2 mb-2">
+                <img
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
+                  [alt]="offer.clientName"
+                  class="w-8 h-8 rounded-full object-cover"
+                />
+                <div>
+                  <button 
+                    (click)="viewClientProfile(offer.clientId)"
+                    class="text-sm font-medium text-primary-600 hover:text-primary-800"
+                  >
+                    {{ offer.clientName }}
+                  </button>
+                  <div class="flex items-center space-x-1">
+                    <div class="flex">
+                      <svg *ngFor="let star of getStarArray(offer.clientRating)" 
+                           class="w-3 h-3 text-yellow-400 fill-current">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    </div>
+                    <span class="text-xs text-gray-500">{{ offer.clientRating }} ({{ offer.clientReviews }} {{ 'projectOffers.reviews' | translate }})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="text-right">
+              <p class="text-sm text-gray-500">{{ 'projectOffers.sentOn' | translate }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ formatDate(offer.sentDate) }}</p>
+              <p *ngIf="offer.status === 'pending'" class="text-xs text-red-600 mt-1">
+                {{ 'projectOffers.expiresOn' | translate }}: {{ formatDate(offer.expiresAt) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Project Description -->
+          <p class="text-gray-700 mb-4">{{ offer.project.description }}</p>
+
+          <!-- Skills -->
+          <div class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'projectOffers.requiredSkills' | translate }}</h4>
+            <div class="flex flex-wrap gap-2">
+              <span *ngFor="let skill of offer.project.skills" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                {{ skill }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Client Message -->
+          <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'projectOffers.clientMessage' | translate }}</h4>
+            <p class="text-gray-700 text-sm">{{ offer.message }}</p>
+          </div>
+
+          <!-- Project Details -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p class="text-sm text-gray-500">{{ 'projectOffers.budget' | translate }}</p>
+              <p class="font-semibold text-gray-900">
+                <span *ngIf="offer.proposedBudget">€{{ offer.proposedBudget | number }}</span>
+                <span *ngIf="!offer.proposedBudget && offer.project.budget.type === 'fixed'">
+                  €{{ offer.project.budget.min | number }} - €{{ offer.project.budget.max | number }}
+                </span>
+                <span *ngIf="!offer.proposedBudget && offer.project.budget.type === 'hourly'">
+                  €{{ offer.project.budget.min | number }}-{{ offer.project.budget.max | number }}/hr
+                </span>
+              </p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">{{ 'projectOffers.timeline' | translate }}</p>
+              <p class="font-semibold text-gray-900">
+                <span *ngIf="offer.proposedDeadline">{{ formatDateString(offer.proposedDeadline) }}</span>
+                <span *ngIf="!offer.proposedDeadline">{{ offer.project.timeline.duration }}</span>
+              </p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">{{ 'projectOffers.projectType' | translate }}</p>
+              <p class="font-semibold text-gray-900">{{ 'projectOffers.types.' + offer.project.projectType | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Terms (if any) -->
+          <div *ngIf="offer.terms" class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'projectOffers.terms' | translate }}</h4>
+            <p class="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">{{ offer.terms }}</p>
+          </div>
+
+          <!-- Response Message (for responded offers) -->
+          <div *ngIf="offer.status !== 'pending' && offer.responseDate" class="mb-4 p-4 rounded-lg"
+               [class]="offer.status === 'accepted' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-sm font-medium" [class]="offer.status === 'accepted' ? 'text-green-800' : 'text-red-800'">
+                {{ 'projectOffers.yourResponse' | translate }}
+              </h4>
+              <span class="text-xs text-gray-500">{{ formatDate(offer.responseDate) }}</span>
+            </div>
+            <p class="text-sm" [class]="offer.status === 'accepted' ? 'text-green-700' : 'text-red-700'">
+              {{ offer.status === 'accepted' ? 'projectOffers.acceptedMessage' : 'projectOffers.declinedMessage' | translate }}
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap gap-3">
+            <button
+              (click)="viewProjectDetails(offer.project)"
+              class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+            >
+              {{ 'projectOffers.actions.viewProject' | translate }}
+            </button>
+
+            <!-- Actions for pending offers -->
+            <div *ngIf="offer.status === 'pending' && !isOfferExpired(offer)" class="flex gap-3">
+              <button
+                (click)="openResponseModal(offer, 'accept')"
+                class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+              >
+                {{ 'projectOffers.actions.accept' | translate }}
+              </button>
+              
+              <button
+                (click)="openResponseModal(offer, 'decline')"
+                class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
+              >
+                {{ 'projectOffers.actions.decline' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Response Modal -->
+  <div *ngIf="showResponseModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+      <div class="p-6">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">
+            <span *ngIf="responseType === 'accept'">{{ 'projectOffers.modal.acceptTitle' | translate }}</span>
+            <span *ngIf="responseType === 'decline'">{{ 'projectOffers.modal.declineTitle' | translate }}</span>
+          </h2>
+          <button 
+            (click)="closeResponseModal()" 
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Project Info -->
+        <div *ngIf="selectedOffer" class="bg-gray-50 rounded-lg p-4 mb-6">
+          <h3 class="font-medium text-gray-900 mb-2">{{ selectedOffer.project.title }}</h3>
+          <p class="text-sm text-gray-600 mb-2">{{ 'projectOffers.modal.client' | translate }}: {{ selectedOffer.clientName }}</p>
+          <p class="text-sm text-gray-600">
+            {{ 'projectOffers.modal.budget' | translate }}: 
+            <span *ngIf="selectedOffer.proposedBudget">€{{ selectedOffer.proposedBudget | number }}</span>
+            <span *ngIf="!selectedOffer.proposedBudget">€{{ selectedOffer.project.budget.min | number }} - €{{ selectedOffer.project.budget.max | number }}</span>
+          </p>
+        </div>
+
+        <!-- Response Form -->
+        <form [formGroup]="responseForm" (ngSubmit)="submitResponse()">
+          <!-- Response Message -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              {{ 'projectOffers.modal.responseMessage' | translate }} *
+            </label>
+            <textarea
+              formControlName="message"
+              rows="4"
+              class="input-field"
+              [placeholder]="'projectOffers.modal.messagePlaceholder' | translate"
+              [class.border-red-500]="isFieldInvalid('message')"
+            ></textarea>
+            <div *ngIf="isFieldInvalid('message')" class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('message') }}
+            </div>
+          </div>
+
+          <!-- Counter Offer Fields (for acceptance) -->
+          <div *ngIf="responseType === 'accept'" class="space-y-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'projectOffers.modal.counterBudget' | translate }}
+                </label>
+                <input
+                  type="number"
+                  formControlName="counterBudget"
+                  class="input-field"
+                  [placeholder]="'projectOffers.modal.counterBudgetPlaceholder' | translate"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ 'projectOffers.modal.counterDeadline' | translate }}
+                </label>
+                <input
+                  type="date"
+                  formControlName="counterDeadline"
+                  class="input-field"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ 'projectOffers.modal.additionalTerms' | translate }}
+              </label>
+              <textarea
+                formControlName="additionalTerms"
+                rows="2"
+                class="input-field"
+                [placeholder]="'projectOffers.modal.additionalTermsPlaceholder' | translate"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              (click)="closeResponseModal()"
+              class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+            >
+              {{ 'projectOffers.modal.cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="!responseForm.valid"
+              class="px-4 py-2 text-sm text-white rounded-lg transition-colors duration-200"
+              [class]="responseType === 'accept' ? 'bg-green-600 hover:bg-green-700 disabled:bg-green-300' : 'bg-red-600 hover:bg-red-700 disabled:bg-red-300'"
+            >
+              <span *ngIf="responseType === 'accept'">{{ 'projectOffers.modal.acceptProject' | translate }}</span>
+              <span *ngIf="responseType === 'decline'">{{ 'projectOffers.modal.declineProject' | translate }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Footer -->
+  <app-shared-footer></app-shared-footer>
+</div>

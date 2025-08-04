@@ -1,0 +1,644 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Shared Navbar -->
+  <app-shared-navbar [config]="navbarConfig"></app-shared-navbar>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-xl shadow-sm border mb-8">
+      <nav class="flex space-x-8 px-6" aria-label="Tabs">
+        <button
+          (click)="switchTab('applications')"
+          [class]="activeTab === 'applications' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          {{ 'clientDashboard.tabs.applications' | translate }} ({{ applications.length }})
+        </button>
+        <button
+          (click)="switchTab('ongoing')"
+          [class]="activeTab === 'ongoing' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          Ongoing Projects ({{ ongoingProjects.length }})
+        </button>
+        <button
+          (click)="switchTab('offers')"
+          [class]="activeTab === 'offers' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          {{ 'clientDashboard.tabs.offers' | translate }} ({{ offers.length }})
+        </button>
+        <button
+          (click)="switchTab('projects')"
+          [class]="activeTab === 'projects' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          {{ 'clientDashboard.tabs.projects' | translate }} ({{ projects.length }})
+        </button>
+      </nav>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    </div>
+
+    <!-- Applications Tab -->
+    <div *ngIf="activeTab === 'applications' && !isLoading">
+      <!-- Filters -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ 'clientDashboard.filters.filterByProject' | translate }}</label>
+            <select [(ngModel)]="selectedProjectFilter" class="input-field">
+              <option value="">{{ 'clientDashboard.filters.allProjects' | translate }}</option>
+              <option *ngFor="let project of projects" [value]="project.id">{{ project.title }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ 'clientDashboard.filters.filterByStatus' | translate }}</label>
+            <select [(ngModel)]="selectedStatusFilter" class="input-field">
+              <option value="">{{ 'clientDashboard.filters.allStatuses' | translate }}</option>
+              <option value="pending">{{ 'clientDashboard.status.pending' | translate }}</option>
+              <option value="reviewed">{{ 'clientDashboard.status.reviewed' | translate }}</option>
+              <option value="shortlisted">{{ 'clientDashboard.status.shortlisted' | translate }}</option>
+              <option value="offered">{{ 'clientDashboard.status.offered' | translate }}</option>
+              <option value="rejected">{{ 'clientDashboard.status.rejected' | translate }}</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button
+              (click)="selectedProjectFilter = ''; selectedStatusFilter = ''"
+              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              {{ 'clientDashboard.filters.clearFilters' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Applications List -->
+      <div class="space-y-4">
+        <div
+          *ngFor="let application of filteredApplications"
+          class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden"
+        >
+          <div class="p-6">
+            <!-- Application Header -->
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1">
+                <div class="flex items-center space-x-3 mb-2">
+                  <img
+                    [src]="application.talentAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face'"
+                    [alt]="application.talentName"
+                    class="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ application.talentName }}</h3>
+                    <div class="flex items-center space-x-2">
+                      <span [class]="'px-2 py-1 rounded-full text-xs font-medium ' + (application.talentType === 'service_company' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800')">
+                        {{ application.talentType === 'service_company' ? 'Service Company' : 'Freelancer' }}
+                      </span>
+                      <div class="flex items-center">
+                        <svg *ngFor="let star of getStarArray(application.talentRating)" class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                        <span class="ml-1 text-sm text-gray-600">{{ application.talentRating }} ({{ application.talentReviews }})</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <p class="text-sm text-gray-600 mb-2">{{ 'clientDashboard.applications.appliedTo' | translate }}: <strong>{{ getProjectTitle(application.projectId) }}</strong></p>
+                <p class="text-gray-700 mb-4">{{ application.coverLetter }}</p>
+                
+                <!-- Service Company Team -->
+                <div *ngIf="application.talentType === 'service_company' && application.availableEngineers" class="mb-4">
+                  <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'clientDashboard.applications.availableEngineers' | translate }} ({{ application.availableEngineers.length }})</h4>
+                  <div class="flex flex-wrap gap-2">
+                    <div *ngFor="let engineer of application.availableEngineers.slice(0, 3)" class="flex items-center bg-gray-50 rounded-lg px-3 py-2">
+                      <img
+                        [src]="engineer.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'"
+                        [alt]="engineer.name"
+                        class="w-6 h-6 rounded-full object-cover mr-2"
+                      />
+                      <div>
+                        <p class="text-xs font-medium text-gray-900">{{ engineer.name }}</p>
+                        <p class="text-xs text-gray-500">{{ engineer.specialization }}</p>
+                      </div>
+                    </div>
+                    <div *ngIf="application.availableEngineers.length > 3" class="flex items-center bg-gray-100 rounded-lg px-3 py-2">
+                      <span class="text-xs text-gray-600">+{{ application.availableEngineers.length - 3 }} more</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Freelancer Skills -->
+                <div *ngIf="application.talentType === 'freelancer' && application.skills" class="mb-4">
+                  <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'clientDashboard.applications.skills' | translate }}</h4>
+                  <div class="flex flex-wrap gap-2">
+                    <span *ngFor="let skill of application.skills.slice(0, 6)" class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                      {{ skill }}
+                    </span>
+                    <span *ngIf="application.skills.length > 6" class="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
+                      +{{ application.skills.length - 6 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex flex-col items-end space-y-2">
+                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusColor(application.status)">
+                  {{ application.status | titlecase }}
+                </span>
+                <p class="text-xs text-gray-500">{{ formatDate(application.submittedDate) }}</p>
+              </div>
+            </div>
+
+            <!-- Application Details -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p class="text-sm text-gray-500">{{ 'clientDashboard.applications.proposedBudget' | translate }}</p>
+                <p class="font-semibold text-gray-900">€{{ application.proposedBudget | number }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">{{ 'clientDashboard.applications.timeline' | translate }}</p>
+                <p class="font-semibold text-gray-900">{{ application.proposedTimeline }}</p>
+              </div>
+              <div *ngIf="application.hourlyRate">
+                <p class="text-sm text-gray-500">{{ 'clientDashboard.applications.hourlyRate' | translate }}</p>
+                <p class="font-semibold text-gray-900">€{{ application.hourlyRate }}/hr</p>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-wrap gap-2">
+              <button
+                (click)="openApplicationModal(application)"
+                class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              >
+                {{ 'clientDashboard.applications.viewDetails' | translate }}
+              </button>
+              
+              <button
+                *ngIf="application.status === 'pending'"
+                (click)="updateApplicationStatus(application, 'reviewed')"
+                class="px-4 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200"
+              >
+                {{ 'clientDashboard.applications.markAsReviewed' | translate }}
+              </button>
+              
+              <button
+                *ngIf="application.status === 'pending' || application.status === 'reviewed'"
+                (click)="updateApplicationStatus(application, 'shortlisted')"
+                class="px-4 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors duration-200"
+              >
+                {{ 'clientDashboard.applications.shortlist' | translate }}
+              </button>
+              
+              <button
+                *ngIf="application.status === 'pending' || application.status === 'reviewed' || application.status === 'shortlisted'"
+                (click)="openOfferModal(application)"
+                class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+              >
+                {{ 'clientDashboard.applications.sendOffer' | translate }}
+              </button>
+              
+              <button
+                *ngIf="application.status !== 'rejected' && application.status !== 'offered'"
+                (click)="updateApplicationStatus(application, 'rejected')"
+                class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
+              >
+                {{ 'clientDashboard.applications.reject' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div *ngIf="filteredApplications.length === 0" class="text-center py-12">
+          <div class="mb-4">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
+          <p class="text-gray-500">Applications for your projects will appear here.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ongoing Projects Tab -->
+    <div *ngIf="activeTab === 'ongoing' && !isLoading">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div
+          *ngFor="let project of ongoingProjects"
+          class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+          (click)="navigateToWorkspace(project.id)"
+        >
+          <div class="p-6">
+            <!-- Project Header -->
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1 truncate">{{ project.title }}</h3>
+                <p class="text-sm text-gray-600 mb-2">{{ project.freelancerName }}</p>
+              </div>
+              <span [class]="'px-2 py-1 rounded-full text-xs font-medium ' + getOngoingProjectStatusColor(project.status)">
+                {{ project.status | titlecase }}
+              </span>
+            </div>
+
+            <!-- Project Description -->
+            <p class="text-gray-700 text-sm mb-4 line-clamp-2">{{ project.description }}</p>
+
+            <!-- Progress Bar -->
+            <div class="mb-4">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-gray-600">Progress</span>
+                <span class="font-medium">{{ project.progress }}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  class="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  [style.width.%]="project.progress"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Budget:</span>
+                <span class="font-medium">€{{ project.budget | number }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Deadline:</span>
+                <span class="font-medium">{{ formatDate(project.deadline) }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Days Remaining:</span>
+                <span [class]="getDaysRemaining(project.deadline) <= 7 ? 'font-medium text-red-600' : 'font-medium text-gray-900'">
+                  {{ getDaysRemaining(project.deadline) }} days
+                </span>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+              <button class="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 flex items-center justify-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+                <span>Open Workspace</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="ongoingProjects.length === 0" class="text-center py-12">
+        <div class="max-w-md mx-auto">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No ongoing projects</h3>
+          <p class="mt-1 text-sm text-gray-500">Accept applications to start working on projects.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Offers Tab -->
+    <div *ngIf="activeTab === 'offers' && !isLoading">
+      <div class="space-y-4">
+        <div
+          *ngFor="let offer of offers"
+          class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden"
+        >
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ offer.title }}</h3>
+                <p class="text-gray-700 mb-4">{{ offer.description }}</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p class="text-sm text-gray-500">Budget</p>
+                    <p class="font-semibold text-gray-900">€{{ offer.budget.amount | number }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Timeline</p>
+                    <p class="font-semibold text-gray-900">{{ offer.timeline }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Sent Date</p>
+                    <p class="font-semibold text-gray-900">{{ formatDate(offer.sentDate) }}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex flex-col items-end space-y-2">
+                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusColor(offer.status)">
+                  {{ offer.status | titlecase }}
+                </span>
+                <p class="text-xs text-gray-500">Expires: {{ formatDate(offer.expiryDate) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div *ngIf="offers.length === 0" class="text-center py-12">
+          <div class="mb-4">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No offers sent</h3>
+          <p class="text-gray-500">Offers you send to talent will appear here.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Tab -->
+    <div *ngIf="activeTab === 'projects' && !isLoading">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          *ngFor="let project of projects"
+          class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden"
+        >
+          <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ project.title }}</h3>
+            <p class="text-gray-700 mb-4 line-clamp-3">{{ project.description }}</p>
+            
+            <div class="space-y-2 mb-4">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Budget:</span>
+                <span class="font-medium">€{{ project.budget.min }} - €{{ project.budget.max }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Applications:</span>
+                <span class="font-medium">{{ project.proposals }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Posted:</span>
+                <span class="font-medium">{{ formatDate(project.postedDate) }}</span>
+              </div>
+            </div>
+            
+            <div class="flex space-x-2">
+              <button class="flex-1 px-3 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200">
+                View Applications
+              </button>
+              <button class="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Details Modal -->
+  <div *ngIf="showApplicationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-900">Application Details</h2>
+        <button
+          (click)="closeApplicationModal()"
+          class="text-gray-400 hover:text-gray-600 text-xl font-bold"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="p-6" *ngIf="selectedApplication">
+        <!-- Full application details here -->
+        <div class="space-y-6">
+          <!-- Talent Information -->
+          <div class="flex items-center space-x-4">
+            <img
+              [src]="selectedApplication.talentAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face'"
+              [alt]="selectedApplication.talentName"
+              class="w-16 h-16 rounded-full object-cover"
+            />
+            <div>
+              <h3 class="text-xl font-semibold text-gray-900">{{ selectedApplication.talentName }}</h3>
+              <p class="text-gray-600">{{ selectedApplication.talentType === 'service_company' ? 'Service Company' : 'Freelancer' }}</p>
+              <div class="flex items-center mt-1">
+                <svg *ngFor="let star of getStarArray(selectedApplication.talentRating)" class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>
+                <span class="ml-2 text-sm text-gray-600">{{ selectedApplication.talentRating }} ({{ selectedApplication.talentReviews }} reviews)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cover Letter -->
+          <div>
+            <h4 class="text-lg font-medium text-gray-900 mb-2">Cover Letter</h4>
+            <p class="text-gray-700 whitespace-pre-line">{{ selectedApplication.coverLetter }}</p>
+          </div>
+
+          <!-- Team Details for Service Companies -->
+          <div *ngIf="selectedApplication.talentType === 'service_company' && selectedApplication.availableEngineers">
+            <h4 class="text-lg font-medium text-gray-900 mb-4">Available Team ({{ selectedApplication.availableEngineers.length }} Engineers)</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div *ngFor="let engineer of selectedApplication.availableEngineers" class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center space-x-3 mb-2">
+                  <img
+                    [src]="engineer.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'"
+                    [alt]="engineer.name"
+                    class="w-8 h-8 rounded-full object-cover"
+                  />
+                  <div>
+                    <p class="font-medium text-gray-900">{{ engineer.name }}</p>
+                    <p class="text-sm text-gray-600">{{ engineer.specialization }}</p>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-1 mb-2">
+                  <span *ngFor="let skill of engineer.skills.slice(0, 4)" class="px-2 py-1 bg-white text-gray-700 rounded text-xs">
+                    {{ skill }}
+                  </span>
+                </div>
+                <p class="text-sm text-gray-600">€{{ engineer.hourlyRate }}/hr</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex space-x-3 pt-6 border-t">
+            <button
+              *ngIf="selectedApplication.status !== 'offered' && selectedApplication.status !== 'hired'"
+              (click)="acceptApplication(selectedApplication)"
+              class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium"
+            >
+              Accept & Start Project
+            </button>
+            <button
+              *ngIf="selectedApplication.status !== 'offered'"
+              (click)="openOfferModal(selectedApplication); closeApplicationModal()"
+              class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+            >
+              Send Offer
+            </button>
+            <button
+              (click)="updateApplicationStatus(selectedApplication, 'shortlisted'); closeApplicationModal()"
+              class="px-6 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors duration-200"
+            >
+              Shortlist
+            </button>
+            <button
+              (click)="updateApplicationStatus(selectedApplication, 'rejected'); closeApplicationModal()"
+              class="px-6 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send Offer Modal -->
+  <div *ngIf="showOfferModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-900">Send Offer</h2>
+        <button
+          (click)="closeOfferModal()"
+          class="text-gray-400 hover:text-gray-600 text-xl font-bold"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="p-6">
+        <form [formGroup]="offerForm" (ngSubmit)="sendOffer()">
+          <div class="space-y-6">
+            <!-- Offer Title -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Offer Title *</label>
+              <input
+                type="text"
+                formControlName="title"
+                [class]="isFieldInvalid('title') ? 'input-field input-error' : 'input-field'"
+                placeholder="e.g., Offer for E-commerce Website Development"
+              />
+              <div *ngIf="isFieldInvalid('title')" class="text-red-500 text-sm mt-1">
+                {{ getErrorMessage('title') }}
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Project Description *</label>
+              <textarea
+                formControlName="description"
+                rows="4"
+                [class]="isFieldInvalid('description') ? 'input-field input-error' : 'input-field'"
+                placeholder="Describe the project scope, deliverables, and expectations..."
+              ></textarea>
+              <div *ngIf="isFieldInvalid('description')" class="text-red-500 text-sm mt-1">
+                {{ getErrorMessage('description') }}
+              </div>
+            </div>
+
+            <!-- Budget -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Budget Amount *</label>
+                <input
+                  type="number"
+                  formControlName="budgetAmount"
+                  [class]="isFieldInvalid('budgetAmount') ? 'input-field input-error' : 'input-field'"
+                  placeholder="0"
+                />
+                <div *ngIf="isFieldInvalid('budgetAmount')" class="text-red-500 text-sm mt-1">
+                  {{ getErrorMessage('budgetAmount') }}
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Budget Type *</label>
+                <select formControlName="budgetType" class="input-field">
+                  <option value="fixed">Fixed Price</option>
+                  <option value="hourly">Hourly Rate</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Timeline & Start Date -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Timeline *</label>
+                <input
+                  type="text"
+                  formControlName="timeline"
+                  [class]="isFieldInvalid('timeline') ? 'input-field input-error' : 'input-field'"
+                  placeholder="e.g., 6 weeks"
+                />
+                <div *ngIf="isFieldInvalid('timeline')" class="text-red-500 text-sm mt-1">
+                  {{ getErrorMessage('timeline') }}
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input
+                  type="date"
+                  formControlName="startDate"
+                  class="input-field"
+                />
+              </div>
+            </div>
+
+            <!-- Terms -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Terms & Conditions *</label>
+              <textarea
+                formControlName="terms"
+                rows="4"
+                [class]="isFieldInvalid('terms') ? 'input-field input-error' : 'input-field'"
+                placeholder="Include payment terms, milestones, deliverables, and any other important conditions..."
+              ></textarea>
+              <div *ngIf="isFieldInvalid('terms')" class="text-red-500 text-sm mt-1">
+                {{ getErrorMessage('terms') }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex justify-end space-x-3 mt-8 pt-6 border-t">
+            <button
+              type="button"
+              (click)="closeOfferModal()"
+              class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="offerForm.invalid || isLoading"
+              class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors duration-200 flex items-center"
+            >
+              <svg *ngIf="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Send Offer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Footer -->
+  <app-shared-footer></app-shared-footer>
+</div>

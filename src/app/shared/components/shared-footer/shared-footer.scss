@@ -1,0 +1,116 @@
+// Modern Footer Component Styles - Dark Theme to Match Navbar
+footer {
+  margin-top: auto;
+  background-color: #1e293b; // slate-800
+  border-top: 1px solid #475569; // slate-600
+  
+  h3 {
+    color: #ffffff;
+    font-weight: 600;
+  }
+}
+
+// Footer links with dark theme styling
+a {
+  text-decoration: none;
+  color: #cbd5e1; // gray-300
+  transition: color 0.2s ease-in-out;
+  
+  &:hover {
+    text-decoration: none;
+    color: #60a5fa; // blue-400
+  }
+}
+
+// Mobile app badge styling with dark theme
+.app-badge {
+  background-color: #334155; // slate-700
+  border: 1px solid #475569; // slate-600
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    background-color: #475569; // slate-600
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  }
+  
+  svg {
+    color: #cbd5e1; // gray-300
+  }
+  
+  .text-left {
+    color: #ffffff;
+    
+    .text-xs {
+      color: #9ca3af; // gray-400
+    }
+    
+    .text-sm {
+      color: #ffffff;
+    }
+  }
+}
+
+// Social media icons hover effect with dark theme
+.social-icon {
+  color: #9ca3af; // gray-400
+  transition: all 0.2s ease-in-out;
+  border-radius: 50%;
+  
+  &:hover {
+    color: #60a5fa; // blue-400
+    background-color: #334155; // slate-700
+    transform: scale(1.1);
+  }
+}
+
+// Dark theme text color overrides
+.text-gray-300 {
+  color: #cbd5e1 !important;
+}
+
+.text-gray-400 {
+  color: #9ca3af !important;
+}
+
+.text-white {
+  color: #ffffff !important;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .app-badge {
+    padding: 0.5rem;
+    
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .app-badge {
+    div {
+      font-size: 0.75rem;
+    }
+    
+    .text-left {
+      display: none;
+    }
+  }
+  
+  .flex-col.sm\\:flex-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+}
