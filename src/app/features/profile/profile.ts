@@ -1,111 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SharedNavbar, NavbarConfig } from '../../shared/components/shared-navbar/shared-navbar';
 import { SharedFooter } from '../../shared/components/shared-footer/shared-footer';
-
-export interface UserProfile {
-  id: string;
-  username: string;
-  role: 'service_company' | 'freelancer' | 'client';
-  isVerified: boolean;
-  avatar?: string;
-  bio?: string;
-  skills: string[];
-  experience: ExperienceItem[];
-  portfolio: PortfolioItem[];
-  education?: EducationItem[];
-  certifications?: CertificationItem[];
-  socialLinks?: SocialLinks;
-  rating: number;
-  totalReviews: number;
-  reviews: Review[];
-  languages: string[];
-  location?: string;
-  hourlyRate?: number;
-  availability: 'available' | 'busy' | 'unavailable';
-  joinedDate: Date;
-  lastActive: Date;
-  // Resume properties
-  resumeUrl?: string;
-  resumeFileName?: string;
-  resumeUploadedDate?: Date;
-  // Service Company specific
-  companyName?: string;
-  companySize?: string;
-  teamMembers?: TeamMember[];
-  // Client specific
-  industry?: string;
-  projectsPosted?: number;
-}
-
-export interface ExperienceItem {
-  id: string;
-  title: string;
-  company: string;
-  startDate: Date;
-  endDate?: Date;
-  isCurrent: boolean;
-  description: string;
-}
-
-export interface EducationItem {
-  id: string;
-  degree: string;
-  institution: string;
-  startYear: number;
-  endYear?: number;
-  description?: string;
-  gpa?: string;
-}
-
-export interface CertificationItem {
-  id: string;
-  name: string;
-  issuer: string;
-  issueDate: Date;
-  expiryDate?: Date;
-  credentialId?: string;
-  credentialUrl?: string;
-}
-
-export interface SocialLinks {
-  github?: string;
-  stackoverflow?: string;
-  linkedin?: string;
-  website?: string;
-}
-
-// Updated Portfolio Interface
-export interface PortfolioItem {
-  id: string;
-  title: string;
-  description: string;
-  projectUrl?: string;
-  coverImage?: string;
-  createdDate: Date;
-  isPublic: boolean;
-}
-
-export interface Review {
-  id: string;
-  reviewerName: string;
-  reviewerAvatar?: string;
-  rating: number;
-  comment: string;
-  projectTitle: string;
-  date: Date;
-}
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  avatar?: string;
-  skills: string[];
-}
+import { UserService } from '../../shared/services/user.service';
+import { 
+  UserProfileResponse, 
+  ProfileUpdateRequest, 
+  EducationDto, 
+  EducationRequest,
+  CertificationDto,
+  CertificationRequest,
+  ExperienceDto,
+  ExperienceRequest,
+  ResumeUpdateRequest,
+  AvailabilityStatus,
+  ERole,
+  PortfolioDto,
+  SkillDto
+} from '../../shared/models/user';
+import { PortfolioRequest, ProjectType } from '../../core/dto';
 
 @Component({
   selector: 'app-profile',
@@ -113,6 +30,7 @@ export interface TeamMember {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     TranslateModule,
     SharedNavbar,
     SharedFooter
@@ -121,7 +39,7 @@ export interface TeamMember {
   styleUrl: './profile.scss'
 })
 export class Profile implements OnInit {
-  currentUser!: UserProfile;
+  currentUser: UserProfileResponse | null = null;
   isEditMode = false;
   activeTab = 'overview';
   isPublicView = false;
@@ -133,7 +51,7 @@ export class Profile implements OnInit {
   socialLinksForm!: FormGroup;
   workHistoryForm!: FormGroup;
   skillsForm!: FormGroup;
-  isLoading = false;
+  isLoading = true;
   currentLanguage = 'en';
   
   // Profile viewing properties
@@ -143,6 +61,10 @@ export class Profile implements OnInit {
   // Resume upload
   selectedResumeFile: File | null = null;
   resumeUploadProgress = 0;
+  
+  // Portfolio image upload
+  selectedPortfolioImage: File | null = null;
+  portfolioImagePreview: string | null = null;
   
   // Navbar configuration
   navbarConfig: NavbarConfig = {
@@ -161,283 +83,36 @@ export class Profile implements OnInit {
   showWorkHistoryModal = false;
   showSkillsModal = false;
   
+  // Skills management
+  availableSkills: any[] = [];
+  skillCategories: string[] = [];
+  selectedSkills: any[] = [];
+  searchSkillQuery = '';
+  filteredSkills: any[] = [];
+  
+  // Profile picture management
+  selectedProfilePicture: File | null = null;
+  profilePicturePreview: string | null = null;
+  isUploadingProfilePicture = false;
+  
   isEditingPortfolio = false;
   isEditingEducation = false;
   isEditingCertification = false;
-  editingPortfolioId: string | null = null;
-  editingEducationId: string | null = null;
-  editingCertificationId: string | null = null;
+  editingPortfolioId: number | null = null;
+  editingEducationId: number | null = null;
+  editingCertificationId: number | null = null;
   editingPortfolioItem: any = null;
-  editingWorkHistory: any = null;
+  editingWorkHistory: ExperienceDto | null = null; // Fixed type
 
-  // Mock data - replace with actual API call
-  mockUser: UserProfile = {
-    id: '1',
-    username: 'developer_pro',
-    role: 'freelancer',
-    isVerified: true,
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    bio: 'Full-stack developer with 8+ years of experience in web and mobile applications. Passionate about creating scalable solutions and mentoring junior developers.',
-    skills: ['React', 'Node.js', 'TypeScript', 'Python', 'AWS', 'MongoDB', 'PostgreSQL', 'Docker'],
-    experience: [
-      {
-        id: '1',
-        title: 'Senior Full Stack Developer',
-        company: 'Tech Solutions Inc',
-        startDate: new Date('2021-01-01'),
-        endDate: new Date('2024-12-01'),
-        isCurrent: false,
-        description: 'Led development of microservices architecture, mentored 3 junior developers, and improved system performance by 40%.'
-      },
-      {
-        id: '2',
-        title: 'Frontend Developer',
-        company: 'Digital Agency',
-        startDate: new Date('2018-06-01'),
-        endDate: new Date('2020-12-01'),
-        isCurrent: false,
-        description: 'Developed responsive web applications using React and Vue.js, collaborated with design teams.'
-      }
-    ],
-    education: [
-      {
-        id: '1',
-        degree: 'Bachelor of Science in Computer Science',
-        institution: 'Stanford University',
-        startYear: 2012,
-        endYear: 2016,
-        description: 'Focus on software engineering and algorithms',
-        gpa: '3.8'
-      },
-      {
-        id: '2',
-        degree: 'Master of Science in Software Engineering',
-        institution: 'MIT',
-        startYear: 2016,
-        endYear: 2018,
-        description: 'Specialized in distributed systems and cloud computing'
-      }
-    ],
-    certifications: [
-      {
-        id: '1',
-        name: 'AWS Certified Solutions Architect',
-        issuer: 'Amazon Web Services',
-        issueDate: new Date('2023-01-15'),
-        expiryDate: new Date('2026-01-15'),
-        credentialId: 'AWS-SA-12345'
-      },
-      {
-        id: '2',
-        name: 'Google Cloud Professional Developer',
-        issuer: 'Google Cloud',
-        issueDate: new Date('2022-06-10'),
-        expiryDate: new Date('2024-06-10'),
-        credentialId: 'GCP-DEV-67890'
-      }
-    ],
-    socialLinks: {
-      github: 'https://github.com/developer_pro',
-      stackoverflow: 'https://stackoverflow.com/users/123456/developer-pro',
-      linkedin: 'https://linkedin.com/in/developer-pro',
-      website: 'https://developer-pro.com'
-    },
-    portfolio: [
-      {
-        id: '1',
-        title: 'E-commerce Platform',
-        description: 'Modern e-commerce solution with real-time inventory management, payment processing, and advanced analytics dashboard. Built with modern technologies and best practices.',
-        coverImage: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
-        projectUrl: 'https://example-ecommerce.com',
-        createdDate: new Date('2024-08-15'),
-        isPublic: true
-      },
-      {
-        id: '2',
-        title: 'Task Management App',
-        description: 'Collaborative task management application with real-time updates, team collaboration features, and project tracking capabilities.',
-        coverImage: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=600&h=400&fit=crop',
-        projectUrl: 'https://example-tasks.com',
-        createdDate: new Date('2024-06-20'),
-        isPublic: true
-      },
-      {
-        id: '3',
-        title: 'AI-Powered Analytics Dashboard',
-        description: 'Advanced analytics dashboard with machine learning insights, data visualization, and predictive analytics for business intelligence.',
-        coverImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop',
-        projectUrl: 'https://example-analytics.com',
-        createdDate: new Date('2024-04-10'),
-        isPublic: true
-      }
-    ],
-    rating: 4.8,
-    totalReviews: 47,
-    reviews: [
-      {
-        id: '1',
-        reviewerName: 'Sarah Johnson',
-        reviewerAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b586?w=50&h=50&fit=crop&crop=face',
-        rating: 5,
-        comment: 'Outstanding work! Delivered the project ahead of schedule with excellent code quality. Highly recommended!',
-        projectTitle: 'E-commerce Platform',
-        date: new Date('2024-09-15')
-      },
-      {
-        id: '2',
-        reviewerName: 'Michael Chen',
-        reviewerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
-        rating: 5,
-        comment: 'Great communication and technical expertise. The solution exceeded our expectations.',
-        projectTitle: 'Task Management App',
-        date: new Date('2024-08-22')
-      },
-      {
-        id: '3',
-        reviewerName: 'Emma Wilson',
-        rating: 4,
-        comment: 'Solid work and good problem-solving skills. Minor delays but overall satisfied with the outcome.',
-        projectTitle: 'Mobile App Development',
-        date: new Date('2024-07-10')
-      }
-    ],
-    languages: ['English', 'French', 'Spanish'],
-    location: 'Remote',
-    hourlyRate: 85,
-    availability: 'available',
-    joinedDate: new Date('2020-03-15'),
-    lastActive: new Date('2024-12-20T10:30:00')
-  };
-
-  // Mock talent profiles for demo purposes
-  mockTalentProfiles: { [username: string]: UserProfile } = {
-    'developer_pro': this.mockUser, // Reference to the current user
-    'sarah_designer': {
-      id: '2',
-      username: 'sarah_designer',
-      role: 'freelancer',
-      isVerified: true,
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b586?w=150&h=150&fit=crop&crop=face',
-      bio: 'Creative UI/UX designer with 6+ years of experience in creating beautiful and user-friendly interfaces. Specialized in mobile-first design and accessibility.',
-      skills: ['UI/UX Design', 'Figma', 'Adobe Creative Suite', 'Prototyping', 'User Research', 'Accessibility'],
-      experience: [
-        {
-          id: '1',
-          title: 'Senior UI/UX Designer',
-          company: 'Design Studio Co',
-          startDate: new Date('2020-01-01'),
-          endDate: new Date('2024-01-01'),
-          isCurrent: false,
-          description: 'Led design for multiple web and mobile applications, conducted user research, and mentored junior designers.'
-        },
-        {
-          id: '2',
-          title: 'Product Designer',
-          company: 'Tech Startup',
-          startDate: new Date('2018-03-01'),
-          endDate: new Date('2019-12-01'),
-          isCurrent: false,
-          description: 'Designed user interfaces for SaaS products, created design systems, and collaborated with development teams.'
-        }
-      ],
-      portfolio: [
-        {
-          id: '1',
-          title: 'Mobile Banking App',
-          description: 'Complete UI/UX design for a modern mobile banking application with focus on security and user experience.',
-          coverImage: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=600&h=400&fit=crop',
-          projectUrl: 'https://example-banking.com',
-          createdDate: new Date('2024-06-15'),
-          isPublic: true
-        },
-        {
-          id: '2',
-          title: 'E-learning Platform',
-          description: 'Educational platform design with interactive elements and gamification features.',
-          coverImage: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=600&h=400&fit=crop',
-          projectUrl: 'https://example-learning.com',
-          createdDate: new Date('2024-04-20'),
-          isPublic: true
-        }
-      ],
-      rating: 4.9,
-      totalReviews: 32,
-      reviews: [
-        {
-          id: '1',
-          reviewerName: 'Alex Thompson',
-          reviewerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
-          rating: 5,
-          comment: 'Exceptional design skills and great attention to detail. Highly recommend Sarah for any design project!',
-          projectTitle: 'Mobile Banking App',
-          date: new Date('2024-07-15')
-        }
-      ],
-      languages: ['English', 'Spanish'],
-      location: 'Barcelona, Spain',
-      hourlyRate: 75,
-      availability: 'available',
-      joinedDate: new Date('2019-05-20'),
-      lastActive: new Date('2024-12-19T14:20:00')
-    },
-    'mike_backend': {
-      id: '3',
-      username: 'mike_backend',
-      role: 'freelancer',
-      isVerified: false,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      bio: 'Backend developer specializing in Node.js, Python, and cloud architecture. Experienced in building scalable microservices and APIs.',
-      skills: ['Node.js', 'Python', 'AWS', 'Docker', 'PostgreSQL', 'Redis', 'GraphQL', 'Microservices'],
-      experience: [
-        {
-          id: '1',
-          title: 'Backend Developer',
-          company: 'CloudTech Solutions',
-          startDate: new Date('2021-06-01'),
-          endDate: undefined,
-          isCurrent: true,
-          description: 'Developing cloud-native applications and API services for enterprise clients.'
-        }
-      ],
-      portfolio: [
-        {
-          id: '1',
-          title: 'RESTful API Service',
-          description: 'Scalable API service handling millions of requests with high performance and reliability.',
-          coverImage: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&h=400&fit=crop',
-          projectUrl: 'https://github.com/mike/api-service',
-          createdDate: new Date('2024-05-10'),
-          isPublic: true
-        }
-      ],
-      rating: 4.6,
-      totalReviews: 18,
-      reviews: [
-        {
-          id: '1',
-          reviewerName: 'Jennifer Lee',
-          rating: 5,
-          comment: 'Solid backend work and good communication throughout the project.',
-          projectTitle: 'API Development',
-          date: new Date('2024-06-20')
-        }
-      ],
-      languages: ['English'],
-      location: 'Toronto, Canada',
-      hourlyRate: 65,
-      availability: 'busy',
-      joinedDate: new Date('2021-03-10'),
-      lastActive: new Date('2024-12-18T09:45:00')
-    }
-  };
-
- 
+  // Make AvailabilityStatus accessible in template
+  AvailabilityStatus = AvailabilityStatus;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    public translate: TranslateService // Inject the service. 'public' makes it accessible in the template.
+    private userService: UserService,
+    public translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -446,43 +121,62 @@ export class Profile implements OnInit {
       this.viewedUsername = params['username'];
       this.isViewingOtherProfile = !!this.viewedUsername;
       this.loadUserProfile();
-      this.initializeForms();
     });
   }
 
   loadUserProfile(): void {
+    this.isLoading = true;
+    
     if (this.isViewingOtherProfile && this.viewedUsername) {
-      // Load the talent's profile
-      const talentProfile = this.mockTalentProfiles[this.viewedUsername];
-      if (talentProfile) {
-        this.currentUser = talentProfile;
-      } else {
-        // Handle case where talent is not found
-        console.error('Talent profile not found');
-        this.router.navigate(['/talent-discovery']);
-      }
+      // Load the talent's profile by username
+      this.userService.getUserProfileByUsername(this.viewedUsername).subscribe({
+        next: (profile) => {
+          this.currentUser = profile;
+          this.initializeForms();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading talent profile:', error);
+          this.router.navigate(['/talent-discovery']);
+          this.isLoading = false;
+        }
+      });
     } else {
       // Load current user's profile (your own profile)
-      this.currentUser = this.mockUser;
+      this.userService.getCurrentUserProfile().subscribe({
+        next: (profile) => {
+          this.currentUser = profile;
+          this.initializeForms();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading user profile:', error);
+          // Handle error - maybe redirect to login
+          this.router.navigate(['/auth/login']);
+          this.isLoading = false;
+        }
+      });
     }
   }
 
   initializeForms(): void {
+    if (!this.currentUser) return;
+    
     this.profileForm = this.fb.group({
       bio: [this.currentUser?.bio || '', [Validators.maxLength(500)]],
       location: [this.currentUser?.location || ''],
       hourlyRate: [this.currentUser?.hourlyRate || 0, [Validators.min(0)]],
-      availability: [this.currentUser?.availability || 'available'],
-      skills: [this.currentUser?.skills?.join(', ') || '']
+      availability: [this.currentUser?.availability || AvailabilityStatus.AVAILABLE]
     });
 
-    this.portfolioForm = this.fb.group({
-      title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-      description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(1000)]],
-      projectUrl: ['', [Validators.pattern(/^https?:\/\/.*$/)]],
-      coverImage: ['', [Validators.pattern(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)]],
-      isPublic: [true]
-    });
+this.portfolioForm = this.fb.group({
+  title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+  description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(1000)]],
+  projectUrl: ['', [Validators.pattern(/^https?:\/\/.*$/)]],
+  coverImage: [''],
+  projectType: [ProjectType.WEB_APPLICATION], // Set default value
+  technologies: ['', [Validators.maxLength(100)]]
+});
 
     this.educationForm = this.fb.group({
       degree: ['', [Validators.required, Validators.minLength(3)]],
@@ -507,10 +201,10 @@ export class Profile implements OnInit {
     });
 
     this.socialLinksForm = this.fb.group({
-      github: [this.currentUser?.socialLinks?.github || '', [Validators.pattern(/^https?:\/\/(www\.)?github\.com\/.*$/)]],
-      stackoverflow: [this.currentUser?.socialLinks?.stackoverflow || '', [Validators.pattern(/^https?:\/\/(www\.)?stackoverflow\.com\/.*$/)]],
-      linkedin: [this.currentUser?.socialLinks?.linkedin || '', [Validators.pattern(/^https?:\/\/(www\.)?linkedin\.com\/.*$/)]],
-      website: [this.currentUser?.socialLinks?.website || '', [Validators.pattern(/^https?:\/\/.*$/)]]
+      github: [this.currentUser?.githubUrl || '', [Validators.pattern(/^https?:\/\/(www\.)?github\.com\/.*$/)]],
+      stackoverflow: [this.currentUser?.stackoverflowUrl || '', [Validators.pattern(/^https?:\/\/(www\.)?stackoverflow\.com\/.*$/)]],
+      linkedin: [this.currentUser?.linkedinUrl || '', [Validators.pattern(/^https?:\/\/(www\.)?linkedin\.com\/.*$/)]],
+      website: [this.currentUser?.personalWebsiteUrl || '', [Validators.pattern(/^https?:\/\/.*$/)]]
     });
 
     this.workHistoryForm = this.fb.group({
@@ -523,7 +217,7 @@ export class Profile implements OnInit {
     });
 
     this.skillsForm = this.fb.group({
-      skillsText: [this.currentUser?.skills?.join(', ') || '', [Validators.required]]
+      searchQuery: ['']
     });
   }
 
@@ -543,106 +237,207 @@ export class Profile implements OnInit {
       this.isLoading = true;
       
       const formValue = this.profileForm.value;
-      this.currentUser.bio = formValue.bio;
-      this.currentUser.location = formValue.location;
-      this.currentUser.hourlyRate = formValue.hourlyRate;
-      this.currentUser.availability = formValue.availability;
-      this.currentUser.skills = formValue.skills.split(',').map((skill: string) => skill.trim()).filter((skill: string) => skill);
+      
+      const updateRequest: ProfileUpdateRequest = {
+        bio: formValue.bio,
+        location: formValue.location,
+        hourlyRate: formValue.hourlyRate,
+        availability: formValue.availability
+      };
 
-      setTimeout(() => {
-        this.isLoading = false;
-        this.isEditMode = false;
-        alert('Profile updated successfully!');
-      }, 1000);
+      this.userService.updateProfile(updateRequest).subscribe({
+        next: (updatedProfile) => {
+          this.currentUser = updatedProfile;
+          this.isLoading = false;
+          this.isEditMode = false;
+          alert('Profile updated successfully!');
+        },
+        error: (error) => {
+          console.error('Error updating profile:', error);
+          this.isLoading = false;
+          alert('Error updating profile. Please try again.');
+        }
+      });
     }
   }
 
-toggleLanguage(): void {
+  toggleLanguage(): void {
     const newLang = this.translate.currentLang === 'en' ? 'fr' : 'en';
     this.translate.use(newLang);
   }
 
-
-
   // Portfolio Management Methods
-  openPortfolioModal(portfolioItem?: PortfolioItem): void {
-    this.showPortfolioModal = true;
-    this.isEditingPortfolio = !!portfolioItem;
-    this.editingPortfolioId = portfolioItem?.id || null;
+  openPortfolioModal(portfolioItem?: PortfolioDto): void {
+  this.showPortfolioModal = true;
+  this.isEditingPortfolio = !!portfolioItem;
+  this.editingPortfolioId = portfolioItem?.id || null;
 
-    if (portfolioItem) {
-      this.portfolioForm.patchValue({
-        title: portfolioItem.title,
-        description: portfolioItem.description,
-        projectUrl: portfolioItem.projectUrl || '',
-        coverImage: portfolioItem.coverImage || '',
-        isPublic: portfolioItem.isPublic
+  if (portfolioItem) {
+    this.portfolioForm.patchValue({
+      title: portfolioItem.title,
+      description: portfolioItem.description,
+      projectUrl: portfolioItem.projectLink || '',
+      coverImage: '',
+      projectType: portfolioItem.projectType || ProjectType.WEB_APPLICATION,
+      technologies: portfolioItem.technologies || ''
+    });
+    
+    // ✅ Set preview for existing image using the proper backend URL
+    if (portfolioItem.coverImageUrl) {
+      this.portfolioImagePreview = this.getImageUrl(portfolioItem.coverImageUrl);
+    }
+  } else {
+   this.portfolioForm.reset();
+    this.portfolioForm.patchValue({
+      projectType: ProjectType.WEB_APPLICATION
+    });
+    this.selectedPortfolioImage = null;
+    this.portfolioImagePreview = null;
+  }
+}
+
+closePortfolioModal(): void {
+  this.showPortfolioModal = false;
+  this.isEditingPortfolio = false;
+  this.editingPortfolioId = null;
+  this.portfolioForm.reset();
+  this.selectedPortfolioImage = null;
+  this.portfolioImagePreview = null;
+}
+
+  // Portfolio image upload methods
+  triggerPortfolioImageUpload(): void {
+    const fileInput = document.getElementById('portfolioImageInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+ onPortfolioImageSelected(event: any): void {
+  const file = event.target.files[0];
+  if (file && file.type.startsWith('image/')) {
+    this.selectedPortfolioImage = file;
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.portfolioImagePreview = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    alert('Please select a valid image file (jpg, jpeg, png, gif, or webp).');
+  }
+}
+
+ removePortfolioImage(): void {
+  this.selectedPortfolioImage = null;
+  this.portfolioImagePreview = null;
+  // Reset the file input
+  const fileInput = document.querySelector('#portfolioImageInput') as HTMLInputElement;
+  if (fileInput) {
+    fileInput.value = '';
+  }
+}
+
+savePortfolioItem(): void {
+  if (!this.currentUser) return;
+  
+  if (this.portfolioForm.valid) {
+    this.isLoading = true;
+    const formValue = this.portfolioForm.value;
+
+    // ✅ Handle real file upload instead of placeholder
+    if (this.selectedPortfolioImage) {
+      // Upload the image first
+      this.userService.uploadPortfolioImage(this.selectedPortfolioImage).subscribe({
+        next: (uploadResponse) => {
+          // Now save the portfolio with the real image path
+          this.savePortfolioWithImagePath(formValue, uploadResponse.imagePath);
+        },
+        error: (error) => {
+          console.error('Error uploading image:', error);
+          this.isLoading = false;
+          alert('Error uploading image. Please try again.');
+        }
       });
     } else {
-      this.portfolioForm.reset({ isPublic: true });
+      // No new image selected
+      let existingImagePath = '';
+      if (this.isEditingPortfolio && this.editingPortfolioId) {
+        const existingItem = this.currentUser.portfolios.find(item => item.id === this.editingPortfolioId);
+        existingImagePath = existingItem?.coverImageUrl || '';
+      }
+      this.savePortfolioWithImagePath(formValue, existingImagePath);
     }
   }
+}
 
-  closePortfolioModal(): void {
-    this.showPortfolioModal = false;
-    this.isEditingPortfolio = false;
-    this.editingPortfolioId = null;
-    this.portfolioForm.reset({ isPublic: true });
-  }
+// ✅ Add this new helper method
+private savePortfolioWithImagePath(formValue: any, imagePath: string): void {
+  const portfolioRequest: PortfolioRequest = {
+    title: formValue.title,
+    description: formValue.description,
+    projectLink: formValue.projectUrl || undefined,
+    coverImageUrl: imagePath || undefined,
+    projectType: formValue.projectType as ProjectType,
+    technologies: formValue.technologies || undefined
+  };
 
-  savePortfolioItem(): void {
-    if (this.portfolioForm.valid) {
-      this.isLoading = true;
-      const formValue = this.portfolioForm.value;
-
-      if (this.isEditingPortfolio && this.editingPortfolioId) {
-        // Update existing portfolio item
-        const index = this.currentUser.portfolio.findIndex(item => item.id === this.editingPortfolioId);
+  if (this.isEditingPortfolio && this.editingPortfolioId) {
+    this.userService.updatePortfolio(this.editingPortfolioId, portfolioRequest).subscribe({
+      next: (updatedPortfolio) => {
+        const index = this.currentUser!.portfolios.findIndex(item => item.id === this.editingPortfolioId);
         if (index !== -1) {
-          this.currentUser.portfolio[index] = {
-            ...this.currentUser.portfolio[index],
-            title: formValue.title,
-            description: formValue.description,
-            projectUrl: formValue.projectUrl,
-            coverImage: formValue.coverImage,
-            isPublic: formValue.isPublic
-          };
+          this.currentUser!.portfolios[index] = updatedPortfolio;
         }
-      } else {
-        // Add new portfolio item
-        const newPortfolioItem: PortfolioItem = {
-          id: Date.now().toString(),
-          title: formValue.title,
-          description: formValue.description,
-          projectUrl: formValue.projectUrl,
-          coverImage: formValue.coverImage,
-          createdDate: new Date(),
-          isPublic: formValue.isPublic
-        };
-        this.currentUser.portfolio.unshift(newPortfolioItem);
-      }
-
-      setTimeout(() => {
         this.isLoading = false;
         this.closePortfolioModal();
-        alert(this.isEditingPortfolio ? 'Portfolio item updated successfully!' : 'Portfolio item added successfully!');
-      }, 1000);
-    }
+        alert('Portfolio item updated successfully!');
+      },
+      error: (error) => {
+        console.error('Error updating portfolio:', error);
+        this.isLoading = false;
+        alert('Error updating portfolio. Please try again.');
+      }
+    });
+  } else {
+    this.userService.addPortfolio(portfolioRequest).subscribe({
+      next: (newPortfolio) => {
+        this.currentUser!.portfolios.unshift(newPortfolio);
+        this.isLoading = false;
+        this.closePortfolioModal();
+        alert('Portfolio item added successfully!');
+      },
+      error: (error) => {
+        console.error('Error adding portfolio:', error);
+        this.isLoading = false;
+        alert('Error adding portfolio. Please try again.');
+      }
+    });
   }
+}
 
-  deletePortfolioItem(portfolioId: string): void {
-    if (confirm(this.translate.instant('confirmDelete'))) {
-      this.currentUser.portfolio = this.currentUser.portfolio.filter(item => item.id !== portfolioId);
-      alert('Portfolio item deleted successfully!');
-    }
+ deletePortfolioItem(portfolioId: number): void {
+  if (!this.currentUser) return;
+  
+  if (confirm('Are you sure you want to delete this portfolio item?')) {
+    this.userService.deletePortfolio(portfolioId).subscribe({
+      next: () => {
+        this.currentUser!.portfolios = this.currentUser!.portfolios.filter(item => item.id !== portfolioId);
+        alert('Portfolio item deleted successfully!');
+      },
+      error: (error) => {
+        console.error('Error deleting portfolio:', error);
+        alert('Error deleting portfolio. Please try again.');
+      }
+    });
   }
+}
 
-  togglePortfolioVisibility(portfolioId: string): void {
-    const item = this.currentUser.portfolio.find(item => item.id === portfolioId);
-    if (item) {
-      item.isPublic = !item.isPublic;
-      alert(`Portfolio item is now ${item.isPublic ? 'public' : 'private'}!`);
-    }
+  togglePortfolioVisibility(portfolioId: number): void {
+    // Portfolio visibility is handled at the API level
+    // For now, we just show a message
+    alert('Portfolio visibility updated!');
   }
 
   addPortfolioItem(): void {
@@ -650,49 +445,340 @@ toggleLanguage(): void {
   }
 
   getPortfolioErrorMessage(fieldName: string): string {
-  const control = this.portfolioForm.get(fieldName);
-  
-  // Get field display name
-  const fieldDisplayNames: { [key: string]: string } = {
-    'title': 'Title',
-    'description': 'Description',
-    'projectUrl': 'Project URL',
-    'coverImage': 'Cover Image'
-  };
-  
-  const displayName = fieldDisplayNames[fieldName] || fieldName;
-  
-  if (control?.hasError('required')) {
-    return `${displayName} is required`;
-  }
-  if (control?.hasError('minlength')) {
-    const minLength = control.errors?.['minlength']?.requiredLength;
-    return `${displayName} must be at least ${minLength} characters`;
-  }
-  if (control?.hasError('maxlength')) {
-    const maxLength = control.errors?.['maxlength']?.requiredLength;
-    return `${displayName} cannot exceed ${maxLength} characters`;
-  }
-  if (control?.hasError('pattern')) {
-    if (fieldName === 'projectUrl') {
-      return 'Please enter a valid URL (starting with http:// or https://)';
+    const control = this.portfolioForm.get(fieldName);
+    
+    // Get field display name
+    const fieldDisplayNames: { [key: string]: string } = {
+      'title': 'Title',
+      'description': 'Description',
+      'projectUrl': 'Project URL'
+    };
+    
+    const displayName = fieldDisplayNames[fieldName] || fieldName;
+    
+    if (control?.hasError('required')) {
+      return `${displayName} is required`;
     }
-    if (fieldName === 'coverImage') {
-      return 'Please enter a valid image URL (jpg, jpeg, png, gif, or webp)';
+    if (control?.hasError('minlength')) {
+      const minLength = control.errors?.['minlength']?.requiredLength;
+      return `${displayName} must be at least ${minLength} characters`;
     }
+    if (control?.hasError('maxlength')) {
+      const maxLength = control.errors?.['maxlength']?.requiredLength;
+      return `${displayName} cannot exceed ${maxLength} characters`;
+    }
+    if (control?.hasError('pattern')) {
+      if (fieldName === 'projectUrl') {
+        return 'Please enter a valid URL (starting with http:// or https://)';
+      }
+    }
+    return '';
   }
-  return '';
-}
+
   isPortfolioFieldInvalid(fieldName: string): boolean {
     const field = this.portfolioForm.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // ✅ Add helper method to get the correct image URL
+  getImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Extract filename from path
+    const fileName = imagePath.substring(imagePath.lastIndexOf('/') + 1);
+    return `http://localhost:8081/api/portfolios/image/${fileName}`;
+  }
+
+  // ✅ Add helper method for getting image filename
+  getImageFileName(imagePath: string): string {
+    if (!imagePath) return '';
+    return imagePath.substring(imagePath.lastIndexOf('/') + 1);
+  }
+
+  // ✅ Add helper method to convert technologies string to array
+  getTechnologiesArray(technologies: string): string[] {
+    if (!technologies) return [];
+    return technologies.split(',').map(tech => tech.trim()).filter(tech => tech.length > 0);
+  }
+
+  // ✅ Add helper method to get project type label
+  getProjectTypeLabel(projectType: string): string {
+    const typeLabels: { [key: string]: string } = {
+      'WEB_APPLICATION': 'Web App',
+      'MOBILE_APPLICATION': 'Mobile App',
+      'DESKTOP_APPLICATION': 'Desktop App',
+      'API_SERVICE': 'API Service',
+      'OTHER': 'Other'
+    };
+    return typeLabels[projectType] || projectType;
+  }
+
+  // ✅ Add error handling for images
+  onImageError(event: any): void {
+    // Hide the image if it fails to load
+    event.target.style.display = 'none';
+    // Or you could set a placeholder image:
+    // event.target.src = '/assets/images/portfolio-placeholder.png';
+  }
+
+  // Profile Picture Upload Methods
+  triggerProfilePictureUpload(): void {
+    const fileInput = document.getElementById('profilePictureInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  onProfilePictureSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+
+      this.selectedProfilePicture = file;
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.profilePicturePreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  uploadProfilePicture(): void {
+    if (!this.selectedProfilePicture) return;
+
+    this.isUploadingProfilePicture = true;
+    
+    this.userService.uploadProfilePicture(this.selectedProfilePicture).subscribe({
+      next: (response) => {
+        // Update the current user's profile picture URL
+        if (this.currentUser) {
+          this.currentUser.profilePictureUrl = this.userService.getProfilePictureUrl(response.imagePath);
+        }
+        
+        this.isUploadingProfilePicture = false;
+        this.selectedProfilePicture = null;
+        this.profilePicturePreview = null;
+        
+        // Reset file input
+        const fileInput = document.getElementById('profilePictureInput') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+        
+        alert('Profile picture updated successfully!');
+      },
+      error: (error) => {
+        console.error('Error uploading profile picture:', error);
+        this.isUploadingProfilePicture = false;
+        alert('Error uploading profile picture. Please try again.');
+      }
+    });
+  }
+
+  cancelProfilePictureUpload(): void {
+    this.selectedProfilePicture = null;
+    this.profilePicturePreview = null;
+    
+    // Reset file input
+    const fileInput = document.getElementById('profilePictureInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  getProfilePictureUrl(imagePath: string): string {
+    return this.userService.getProfilePictureUrl(imagePath);
+  }
+
+  // Education form error methods
+  getEducationErrorMessage(fieldName: string): string {
+    const control = this.educationForm.get(fieldName);
+    
+    const fieldDisplayNames: { [key: string]: string } = {
+      'degree': 'Degree',
+      'institution': 'Institution',
+      'startYear': 'Start Year',
+      'endYear': 'End Year',
+      'description': 'Description',
+      'gpa': 'GPA'
+    };
+    
+    const displayName = fieldDisplayNames[fieldName] || fieldName;
+    
+    if (control?.hasError('required')) {
+      return `${displayName} is required`;
+    }
+    if (control?.hasError('minlength')) {
+      const minLength = control.errors?.['minlength']?.requiredLength;
+      return `${displayName} must be at least ${minLength} characters`;
+    }
+    if (control?.hasError('maxlength')) {
+      const maxLength = control.errors?.['maxlength']?.requiredLength;
+      return `${displayName} cannot exceed ${maxLength} characters`;
+    }
+    if (control?.hasError('min')) {
+      const min = control.errors?.['min']?.min;
+      return `${displayName} must be at least ${min}`;
+    }
+    if (control?.hasError('max')) {
+      const max = control.errors?.['max']?.max;
+      return `${displayName} cannot exceed ${max}`;
+    }
+    if (control?.hasError('pattern')) {
+      if (fieldName === 'gpa') {
+        return 'Please enter a valid GPA (e.g., 3.8)';
+      }
+    }
+    return '';
+  }
+
+  isEducationFieldInvalid(fieldName: string): boolean {
+    const field = this.educationForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // Certification form error methods
+  getCertificationErrorMessage(fieldName: string): string {
+    const control = this.certificationForm.get(fieldName);
+    
+    const fieldDisplayNames: { [key: string]: string } = {
+      'name': 'Certification Name',
+      'issuer': 'Issuer',
+      'issueDate': 'Issue Date',
+      'expiryDate': 'Expiry Date',
+      'credentialId': 'Credential ID',
+      'credentialUrl': 'Credential URL'
+    };
+    
+    const displayName = fieldDisplayNames[fieldName] || fieldName;
+    
+    if (control?.hasError('required')) {
+      return `${displayName} is required`;
+    }
+    if (control?.hasError('minlength')) {
+      const minLength = control.errors?.['minlength']?.requiredLength;
+      return `${displayName} must be at least ${minLength} characters`;
+    }
+    if (control?.hasError('pattern')) {
+      if (fieldName === 'credentialUrl') {
+        return 'Please enter a valid URL (starting with http:// or https://)';
+      }
+    }
+    return '';
+  }
+
+  isCertificationFieldInvalid(fieldName: string): boolean {
+    const field = this.certificationForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // Languages form error methods
+  getLanguagesErrorMessage(fieldName: string): string {
+    const control = this.languagesForm.get(fieldName);
+    
+    if (control?.hasError('required')) {
+      return 'At least one language is required';
+    }
+    return '';
+  }
+
+  isLanguagesFieldInvalid(fieldName: string): boolean {
+    const field = this.languagesForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // Social Links form error methods
+  getSocialLinksErrorMessage(fieldName: string): string {
+    const control = this.socialLinksForm.get(fieldName);
+    
+    const fieldDisplayNames: { [key: string]: string } = {
+      'github': 'GitHub URL',
+      'stackoverflow': 'Stack Overflow URL',
+      'linkedin': 'LinkedIn URL',
+      'website': 'Personal Website URL'
+    };
+    
+    const displayName = fieldDisplayNames[fieldName] || fieldName;
+    
+    if (control?.hasError('pattern')) {
+      if (fieldName === 'github') {
+        return 'Please enter a valid GitHub URL (e.g., https://github.com/username)';
+      }
+      if (fieldName === 'stackoverflow') {
+        return 'Please enter a valid Stack Overflow URL';
+      }
+      if (fieldName === 'linkedin') {
+        return 'Please enter a valid LinkedIn URL';
+      }
+      if (fieldName === 'website') {
+        return 'Please enter a valid URL (starting with http:// or https://)';
+      }
+    }
+    return '';
+  }
+
+  isSocialLinksFieldInvalid(fieldName: string): boolean {
+    const field = this.socialLinksForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // Work History form error methods
+  getWorkHistoryErrorMessage(fieldName: string): string {
+    const control = this.workHistoryForm.get(fieldName);
+    
+    const fieldDisplayNames: { [key: string]: string } = {
+      'title': 'Job Title',
+      'company': 'Company',
+      'startDate': 'Start Date',
+      'endDate': 'End Date',
+      'description': 'Description'
+    };
+    
+    const displayName = fieldDisplayNames[fieldName] || fieldName;
+    
+    if (control?.hasError('required')) {
+      return `${displayName} is required`;
+    }
+    if (control?.hasError('minlength')) {
+      const minLength = control.errors?.['minlength']?.requiredLength;
+      return `${displayName} must be at least ${minLength} characters`;
+    }
+    if (control?.hasError('maxlength')) {
+      const maxLength = control.errors?.['maxlength']?.requiredLength;
+      return `${displayName} cannot exceed ${maxLength} characters`;
+    }
+    return '';
+  }
+
+  isWorkHistoryFieldInvalid(fieldName: string): boolean {
+    const field = this.workHistoryForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // Skills form error methods (simplified for skill selection)
+  isSkillsFormValid(): boolean {
+    return this.selectedSkills.length > 0;
   }
 
   getStarArray(rating: number): number[] {
     return Array(5).fill(0).map((_, i) => i < Math.floor(rating) ? 1 : 0);
   }
 
- formatDate(date: Date): string {
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
     const lang = this.translate.currentLang === 'fr' ? 'fr-FR' : 'en-US';
     return new Intl.DateTimeFormat(lang, {
       year: 'numeric',
@@ -701,7 +787,10 @@ toggleLanguage(): void {
     }).format(date);
   }
 
-  getRelativeTime(date: Date): string {
+  getRelativeTime(dateString: string): string {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -714,22 +803,25 @@ toggleLanguage(): void {
       return this.translate.instant('daysAgo', { days: diffDays });
     }
     
-    return this.formatDate(date);
+    return this.formatDate(dateString);
   }
 
-  getAvailabilityColor(availability: string): string {
+  getAvailabilityColor(availability: AvailabilityStatus): string {
     switch (availability) {
-      case 'available': return 'text-green-600 bg-green-100';
-      case 'busy': return 'text-yellow-600 bg-yellow-100';
-      case 'unavailable': return 'text-red-600 bg-red-100';
+      case AvailabilityStatus.AVAILABLE: return 'text-green-600 bg-green-100';
+      case AvailabilityStatus.BUSY: return 'text-yellow-600 bg-yellow-100';
+      case AvailabilityStatus.UNAVAILABLE: return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   }
 
   hasSocialLinks(): boolean {
-    return !!(this.currentUser.socialLinks && Object.keys(this.currentUser.socialLinks).some(key => 
-      this.currentUser.socialLinks![key as keyof SocialLinks]
-    ));
+    return !!(
+      this.currentUser?.githubUrl || 
+      this.currentUser?.stackoverflowUrl || 
+      this.currentUser?.linkedinUrl || 
+      this.currentUser?.personalWebsiteUrl
+    );
   }
 
   logout(): void {
@@ -747,7 +839,7 @@ toggleLanguage(): void {
   }
 
   addExperience(): void {
-    alert('Add experience functionality will be implemented');
+    this.openWorkHistoryModal();
   }
 
   openProject(url?: string): void {
@@ -777,13 +869,29 @@ toggleLanguage(): void {
         this.resumeUploadProgress += 10;
         if (this.resumeUploadProgress >= 100) {
           clearInterval(interval);
-          this.currentUser.resumeFileName = this.selectedResumeFile!.name;
-          this.currentUser.resumeUrl = URL.createObjectURL(this.selectedResumeFile!);
-          this.currentUser.resumeUploadedDate = new Date();
-          this.selectedResumeFile = null;
-          this.isLoading = false;
-          this.resumeUploadProgress = 0;
-          alert('Resume uploaded successfully!');
+          
+          // In a real app, you would upload the file to a server and get back the URL
+          const resumeUpdateRequest: ResumeUpdateRequest = {
+            fileName: this.selectedResumeFile!.name,
+            resumeUrl: URL.createObjectURL(this.selectedResumeFile!)
+          };
+          
+          this.userService.updateResume(resumeUpdateRequest).subscribe({
+            next: (updatedProfile) => {
+              this.currentUser = updatedProfile;
+              this.selectedResumeFile = null;
+              this.isLoading = false;
+              this.resumeUploadProgress = 0;
+              alert('Resume uploaded successfully!');
+            },
+            error: (error) => {
+              console.error('Error uploading resume:', error);
+              this.selectedResumeFile = null;
+              this.isLoading = false;
+              this.resumeUploadProgress = 0;
+              alert('Error uploading resume. Please try again.');
+            }
+          });
         }
       }, 100);
     }
@@ -791,14 +899,22 @@ toggleLanguage(): void {
 
   removeResume(): void {
     if (confirm('Are you sure you want to remove your resume?')) {
-      this.currentUser.resumeFileName = undefined;
-      this.currentUser.resumeUrl = undefined;
-      this.currentUser.resumeUploadedDate = undefined;
-      alert('Resume removed successfully!');
+      this.userService.removeResume().subscribe({
+        next: (updatedProfile) => {
+          this.currentUser = updatedProfile;
+          alert('Resume removed successfully!');
+        },
+        error: (error) => {
+          console.error('Error removing resume:', error);
+          alert('Error removing resume. Please try again.');
+        }
+      });
     }
   }
 
   downloadResume(): void {
+    if (!this.currentUser) return;
+    
     if (this.currentUser.resumeUrl) {
       const link = document.createElement('a');
       link.href = this.currentUser.resumeUrl;
@@ -808,7 +924,7 @@ toggleLanguage(): void {
   }
 
   // Education Modal Methods
-  openEducationModal(education?: EducationItem): void {
+  openEducationModal(education?: EducationDto): void {
     this.showEducationModal = true;
     this.isEditingEducation = !!education;
     this.editingEducationId = education?.id || null;
@@ -835,51 +951,77 @@ toggleLanguage(): void {
   }
 
   saveEducation(): void {
+    if (!this.currentUser) return;
+    
     if (this.educationForm.valid) {
       this.isLoading = true;
       const formValue = this.educationForm.value;
 
+      const educationRequest: EducationRequest = {
+        degree: formValue.degree,
+        institution: formValue.institution,
+        startYear: formValue.startYear,
+        endYear: formValue.endYear || undefined,
+        description: formValue.description,
+        gpa: formValue.gpa
+      };
+
       if (this.isEditingEducation && this.editingEducationId) {
         // Update existing education
-        const index = this.currentUser.education!.findIndex(edu => edu.id === this.editingEducationId);
-        if (index !== -1) {
-          this.currentUser.education![index] = {
-            ...this.currentUser.education![index],
-            degree: formValue.degree,
-            institution: formValue.institution,
-            startYear: formValue.startYear,
-            endYear: formValue.endYear || undefined,
-            description: formValue.description,
-            gpa: formValue.gpa
-          };
-        }
+        this.userService.updateEducation(this.editingEducationId, educationRequest).subscribe({
+          next: (updatedEducation) => {
+            const index = this.currentUser!.education.findIndex(edu => edu.id === this.editingEducationId);
+            if (index !== -1) {
+              this.currentUser!.education[index] = updatedEducation;
+            }
+            this.isLoading = false;
+            this.closeEducationModal();
+            alert('Education updated successfully!');
+          },
+          error: (error) => {
+            console.error('Error updating education:', error);
+            this.isLoading = false;
+            alert('Error updating education. Please try again.');
+          }
+        });
       } else {
         // Add new education
-        if (!this.currentUser.education) {
-          this.currentUser.education = [];
-        }
-        const newEducation: EducationItem = {
-          id: Date.now().toString(),
-          degree: formValue.degree,
-          institution: formValue.institution,
-          startYear: formValue.startYear,
-          endYear: formValue.endYear || undefined,
-          description: formValue.description,
-          gpa: formValue.gpa
-        };
-        this.currentUser.education.unshift(newEducation);
+        this.userService.addEducation(educationRequest).subscribe({
+          next: (newEducation) => {
+            this.currentUser!.education.unshift(newEducation);
+            this.isLoading = false;
+            this.closeEducationModal();
+            alert('Education added successfully!');
+          },
+          error: (error) => {
+            console.error('Error adding education:', error);
+            this.isLoading = false;
+            alert('Error adding education. Please try again.');
+          }
+        });
       }
+    }
+  }
 
-      setTimeout(() => {
-        this.isLoading = false;
-        this.closeEducationModal();
-        alert(this.isEditingEducation ? 'Education updated successfully!' : 'Education added successfully!');
-      }, 1000);
+  deleteEducation(educationId: number): void {
+    if (!this.currentUser) return;
+    
+    if (confirm('Are you sure you want to delete this education record?')) {
+      this.userService.deleteEducation(educationId).subscribe({
+        next: () => {
+          this.currentUser!.education = this.currentUser!.education.filter(edu => edu.id !== educationId);
+          alert('Education deleted successfully!');
+        },
+        error: (error) => {
+          console.error('Error deleting education:', error);
+          alert('Error deleting education. Please try again.');
+        }
+      });
     }
   }
 
   // Certification Modal Methods
-  openCertificationModal(certification?: CertificationItem): void {
+  openCertificationModal(certification?: CertificationDto): void {
     this.showCertificationModal = true;
     this.isEditingCertification = !!certification;
     this.editingCertificationId = certification?.id || null;
@@ -888,8 +1030,8 @@ toggleLanguage(): void {
       this.certificationForm.patchValue({
         name: certification.name,
         issuer: certification.issuer,
-        issueDate: certification.issueDate.toISOString().split('T')[0],
-        expiryDate: certification.expiryDate ? certification.expiryDate.toISOString().split('T')[0] : '',
+        issueDate: certification.issueDate ? certification.issueDate.split('T')[0] : '', // Convert ISO string to date input format
+        expiryDate: certification.expiryDate ? certification.expiryDate.split('T')[0] : '',
         credentialId: certification.credentialId || '',
         credentialUrl: certification.credentialUrl || ''
       });
@@ -906,46 +1048,72 @@ toggleLanguage(): void {
   }
 
   saveCertification(): void {
+    if (!this.currentUser) return;
+    
     if (this.certificationForm.valid) {
       this.isLoading = true;
       const formValue = this.certificationForm.value;
 
+      const certificationRequest: CertificationRequest = {
+        name: formValue.name,
+        issuer: formValue.issuer,
+        issueDate: formValue.issueDate,
+        expiryDate: formValue.expiryDate || undefined,
+        credentialId: formValue.credentialId,
+        credentialUrl: formValue.credentialUrl
+      };
+
       if (this.isEditingCertification && this.editingCertificationId) {
         // Update existing certification
-        const index = this.currentUser.certifications!.findIndex(cert => cert.id === this.editingCertificationId);
-        if (index !== -1) {
-          this.currentUser.certifications![index] = {
-            ...this.currentUser.certifications![index],
-            name: formValue.name,
-            issuer: formValue.issuer,
-            issueDate: new Date(formValue.issueDate),
-            expiryDate: formValue.expiryDate ? new Date(formValue.expiryDate) : undefined,
-            credentialId: formValue.credentialId,
-            credentialUrl: formValue.credentialUrl
-          };
-        }
+        this.userService.updateCertification(this.editingCertificationId, certificationRequest).subscribe({
+          next: (updatedCertification) => {
+            const index = this.currentUser!.certifications.findIndex(cert => cert.id === this.editingCertificationId);
+            if (index !== -1) {
+              this.currentUser!.certifications[index] = updatedCertification;
+            }
+            this.isLoading = false;
+            this.closeCertificationModal();
+            alert('Certification updated successfully!');
+          },
+          error: (error) => {
+            console.error('Error updating certification:', error);
+            this.isLoading = false;
+            alert('Error updating certification. Please try again.');
+          }
+        });
       } else {
         // Add new certification
-        if (!this.currentUser.certifications) {
-          this.currentUser.certifications = [];
-        }
-        const newCertification: CertificationItem = {
-          id: Date.now().toString(),
-          name: formValue.name,
-          issuer: formValue.issuer,
-          issueDate: new Date(formValue.issueDate),
-          expiryDate: formValue.expiryDate ? new Date(formValue.expiryDate) : undefined,
-          credentialId: formValue.credentialId,
-          credentialUrl: formValue.credentialUrl
-        };
-        this.currentUser.certifications.unshift(newCertification);
+        this.userService.addCertification(certificationRequest).subscribe({
+          next: (newCertification) => {
+            this.currentUser!.certifications.unshift(newCertification);
+            this.isLoading = false;
+            this.closeCertificationModal();
+            alert('Certification added successfully!');
+          },
+          error: (error) => {
+            console.error('Error adding certification:', error);
+            this.isLoading = false;
+            alert('Error adding certification. Please try again.');
+          }
+        });
       }
+    }
+  }
 
-      setTimeout(() => {
-        this.isLoading = false;
-        this.closeCertificationModal();
-        alert(this.isEditingCertification ? 'Certification updated successfully!' : 'Certification added successfully!');
-      }, 1000);
+  deleteCertification(certificationId: number): void {
+    if (!this.currentUser) return;
+    
+    if (confirm('Are you sure you want to delete this certification?')) {
+      this.userService.deleteCertification(certificationId).subscribe({
+        next: () => {
+          this.currentUser!.certifications = this.currentUser!.certifications.filter(cert => cert.id !== certificationId);
+          alert('Certification deleted successfully!');
+        },
+        error: (error) => {
+          console.error('Error deleting certification:', error);
+          alert('Error deleting certification. Please try again.');
+        }
+      });
     }
   }
 
@@ -963,16 +1131,31 @@ toggleLanguage(): void {
   }
 
   saveLanguages(): void {
+    if (!this.currentUser) return;
+    
     if (this.languagesForm.valid) {
       this.isLoading = true;
       const formValue = this.languagesForm.value;
-      this.currentUser.languages = formValue.languages.split(',').map((lang: string) => lang.trim()).filter((lang: string) => lang);
+      
+      const languagesString = formValue.languages;
+      
+      const updateRequest: ProfileUpdateRequest = {
+        languages: languagesString
+      };
 
-      setTimeout(() => {
-        this.isLoading = false;
-        this.closeLanguagesModal();
-        alert('Languages updated successfully!');
-      }, 1000);
+      this.userService.updateProfile(updateRequest).subscribe({
+        next: (updatedProfile) => {
+          this.currentUser = updatedProfile;
+          this.isLoading = false;
+          this.closeLanguagesModal();
+          alert('Languages updated successfully!');
+        },
+        error: (error) => {
+          console.error('Error updating languages:', error);
+          this.isLoading = false;
+          alert('Error updating languages. Please try again.');
+        }
+      });
     }
   }
 
@@ -980,10 +1163,10 @@ toggleLanguage(): void {
   openSocialLinksModal(): void {
     this.showSocialLinksModal = true;
     this.socialLinksForm.patchValue({
-      github: this.currentUser?.socialLinks?.github || '',
-      stackoverflow: this.currentUser?.socialLinks?.stackoverflow || '',
-      linkedin: this.currentUser?.socialLinks?.linkedin || '',
-      website: this.currentUser?.socialLinks?.website || ''
+      github: this.currentUser?.githubUrl || '',
+      stackoverflow: this.currentUser?.stackoverflowUrl || '',
+      linkedin: this.currentUser?.linkedinUrl || '',
+      website: this.currentUser?.personalWebsiteUrl || ''
     });
   }
 
@@ -997,25 +1180,31 @@ toggleLanguage(): void {
       this.isLoading = true;
       const formValue = this.socialLinksForm.value;
       
-      if (!this.currentUser.socialLinks) {
-        this.currentUser.socialLinks = {};
-      }
-      
-      this.currentUser.socialLinks.github = formValue.github || undefined;
-      this.currentUser.socialLinks.stackoverflow = formValue.stackoverflow || undefined;
-      this.currentUser.socialLinks.linkedin = formValue.linkedin || undefined;
-      this.currentUser.socialLinks.website = formValue.website || undefined;
+      const updateRequest: ProfileUpdateRequest = {
+        githubUrl: formValue.github || undefined,
+        stackoverflowUrl: formValue.stackoverflow || undefined,
+        linkedinUrl: formValue.linkedin || undefined,
+        personalWebsiteUrl: formValue.website || undefined
+      };
 
-      setTimeout(() => {
-        this.isLoading = false;
-        this.closeSocialLinksModal();
-        alert('Social links updated successfully!');
-      }, 1000);
+      this.userService.updateProfile(updateRequest).subscribe({
+        next: (updatedProfile) => {
+          this.currentUser = updatedProfile;
+          this.isLoading = false;
+          this.closeSocialLinksModal();
+          alert('Social links updated successfully!');
+        },
+        error: (error) => {
+          console.error('Error updating social links:', error);
+          this.isLoading = false;
+          alert('Error updating social links. Please try again.');
+        }
+      });
     }
   }
 
   // Work History Modal Methods
-  openWorkHistoryModal(workItem?: any): void {
+  openWorkHistoryModal(workItem?: ExperienceDto): void {
     this.showWorkHistoryModal = true;
     this.editingWorkHistory = workItem || null;
 
@@ -1023,8 +1212,8 @@ toggleLanguage(): void {
       this.workHistoryForm.patchValue({
         title: workItem.title,
         company: workItem.company,
-        startDate: workItem.startDate.toISOString().split('T')[0],
-        endDate: workItem.endDate ? workItem.endDate.toISOString().split('T')[0] : '',
+        startDate: workItem.startDate,
+        endDate: workItem.endDate || '',
         isCurrent: workItem.isCurrent || false,
         description: workItem.description || ''
       });
@@ -1040,74 +1229,190 @@ toggleLanguage(): void {
   }
 
   saveWorkHistory(): void {
+    if (!this.currentUser) return;
+    
     if (this.workHistoryForm.valid) {
       this.isLoading = true;
       const formValue = this.workHistoryForm.value;
 
+      const experienceRequest: ExperienceRequest = {
+        title: formValue.title,
+        company: formValue.company,
+        startDate: formValue.startDate,
+        endDate: formValue.endDate || undefined,
+        isCurrent: formValue.isCurrent,
+        description: formValue.description
+      };
+
       if (this.editingWorkHistory) {
         // Update existing work history
-        const index = this.currentUser.experience!.findIndex(exp => exp.id === this.editingWorkHistory.id);
-        if (index !== -1) {
-          this.currentUser.experience![index] = {
-            ...this.currentUser.experience![index],
-            title: formValue.title,
-            company: formValue.company,
-            startDate: new Date(formValue.startDate),
-            endDate: formValue.endDate ? new Date(formValue.endDate) : undefined,
-            isCurrent: formValue.isCurrent,
-            description: formValue.description
-          };
-        }
+        this.userService.updateExperience(this.editingWorkHistory.id, experienceRequest).subscribe({
+          next: (updatedExperience) => {
+            const index = this.currentUser!.experience.findIndex(exp => exp.id === this.editingWorkHistory!.id);
+            if (index !== -1) {
+              this.currentUser!.experience[index] = updatedExperience;
+            }
+            this.isLoading = false;
+            this.closeWorkHistoryModal();
+            alert('Work history updated successfully!');
+          },
+          error: (error) => {
+            console.error('Error updating work history:', error);
+            this.isLoading = false;
+            alert('Error updating work history. Please try again.');
+          }
+        });
       } else {
         // Add new work history
-        if (!this.currentUser.experience) {
-          this.currentUser.experience = [];
-        }
-        const newWork = {
-          id: Date.now().toString(),
-          title: formValue.title,
-          company: formValue.company,
-          startDate: new Date(formValue.startDate),
-          endDate: formValue.endDate ? new Date(formValue.endDate) : undefined,
-          isCurrent: formValue.isCurrent,
-          description: formValue.description
-        };
-        this.currentUser.experience.unshift(newWork);
+        this.userService.addExperience(experienceRequest).subscribe({
+          next: (newExperience) => {
+            this.currentUser!.experience.unshift(newExperience);
+            this.isLoading = false;
+            this.closeWorkHistoryModal();
+            alert('Work history added successfully!');
+          },
+          error: (error) => {
+            console.error('Error adding work history:', error);
+            this.isLoading = false;
+            alert('Error adding work history. Please try again.');
+          }
+        });
       }
+    }
+  }
 
-      setTimeout(() => {
-        this.isLoading = false;
-        this.closeWorkHistoryModal();
-        alert(this.editingWorkHistory ? 'Work history updated successfully!' : 'Work history added successfully!');
-      }, 1000);
+  deleteExperience(experienceId: number): void {
+    if (!this.currentUser) return;
+    
+    if (confirm('Are you sure you want to delete this work experience?')) {
+      this.userService.deleteExperience(experienceId).subscribe({
+        next: () => {
+          this.currentUser!.experience = this.currentUser!.experience.filter(exp => exp.id !== experienceId);
+          alert('Work experience deleted successfully!');
+        },
+        error: (error) => {
+          console.error('Error deleting work experience:', error);
+          alert('Error deleting work experience. Please try again.');
+        }
+      });
     }
   }
 
   // Skills Modal Methods
   openSkillsModal(): void {
     this.showSkillsModal = true;
-    this.skillsForm.patchValue({
-      skillsText: this.currentUser?.skills?.join(', ') || ''
-    });
+    this.loadAvailableSkills();
+    this.loadSelectedSkills();
   }
 
   closeSkillsModal(): void {
     this.showSkillsModal = false;
     this.skillsForm.reset();
+    this.searchSkillQuery = '';
+    this.filteredSkills = [];
+  }
+
+  loadAvailableSkills(): void {
+    this.userService.getAllSkills().subscribe({
+      next: (skills) => {
+        this.availableSkills = skills;
+        this.filteredSkills = [...skills];
+      },
+      error: (error) => {
+        console.error('Error loading skills:', error);
+      }
+    });
+
+    this.userService.getSkillCategories().subscribe({
+      next: (categories) => {
+        this.skillCategories = categories;
+      },
+      error: (error) => {
+        console.error('Error loading skill categories:', error);
+      }
+    });
+  }
+
+  loadSelectedSkills(): void {
+    this.selectedSkills = [...(this.currentUser?.skills || [])];
+  }
+
+  filterSkills(): void {
+    if (!this.searchSkillQuery.trim()) {
+      this.filteredSkills = [...this.availableSkills];
+    } else {
+      this.filteredSkills = this.availableSkills.filter(skill =>
+        skill.name.toLowerCase().includes(this.searchSkillQuery.toLowerCase()) ||
+        skill.category.toLowerCase().includes(this.searchSkillQuery.toLowerCase())
+      );
+    }
+  }
+
+  filterSkillsByCategory(category: string): void {
+    if (category === 'all') {
+      this.filteredSkills = [...this.availableSkills];
+    } else {
+      this.filteredSkills = this.availableSkills.filter(skill => skill.category === category);
+    }
+    this.searchSkillQuery = '';
+  }
+
+  isSkillSelected(skill: SkillDto): boolean {
+    return this.selectedSkills.some(selected => selected.id === skill.id);
+  }
+
+  toggleSkill(skill: SkillDto): void {
+    const isSelected = this.isSkillSelected(skill);
+    
+    if (isSelected) {
+      this.selectedSkills = this.selectedSkills.filter(selected => selected.id !== skill.id);
+    } else {
+      this.selectedSkills.push(skill);
+    }
+  }
+
+  removeSkill(skillId: number): void {
+    this.selectedSkills = this.selectedSkills.filter(skill => skill.id !== skillId);
   }
 
   saveSkills(): void {
-    if (this.skillsForm.valid) {
-      this.isLoading = true;
-      const formValue = this.skillsForm.value;
-      this.currentUser.skills = formValue.skillsText.split(',').map((skill: string) => skill.trim()).filter((skill: string) => skill);
-
-      setTimeout(() => {
+    this.isLoading = true;
+    
+    // Get current user skills to determine which to add and remove
+    const currentSkillIds = this.currentUser?.skills?.map(skill => skill.id) || [];
+    const selectedSkillIds = this.selectedSkills.map(skill => skill.id);
+    
+    // Skills to add
+    const skillsToAdd = selectedSkillIds.filter(id => !currentSkillIds.includes(id));
+    
+    // Skills to remove
+    const skillsToRemove = currentSkillIds.filter(id => !selectedSkillIds.includes(id));
+    
+    // Process all skill changes
+    const addPromises = skillsToAdd.map(skillId => 
+      this.userService.addSkillToCurrentUser(skillId).toPromise()
+    );
+    
+    const removePromises = skillsToRemove.map(skillId => 
+      this.userService.removeSkillFromCurrentUser(skillId).toPromise()
+    );
+    
+    Promise.all([...addPromises, ...removePromises])
+      .then(() => {
+        // Update the current user skills
+        if (this.currentUser) {
+          this.currentUser.skills = [...this.selectedSkills];
+        }
+        
         this.isLoading = false;
         this.closeSkillsModal();
         alert('Skills updated successfully!');
-      }, 1000);
-    }
+      })
+      .catch((error) => {
+        console.error('Error updating skills:', error);
+        this.isLoading = false;
+        alert('Error updating skills. Please try again.');
+      });
   }
 
   // Public View Toggle

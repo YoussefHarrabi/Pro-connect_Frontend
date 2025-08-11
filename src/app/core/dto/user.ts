@@ -110,3 +110,48 @@ export interface UpdateClientRequest {
   website?: string;
   description?: string;
 }
+// Update these in your user.ts or dto files
+
+export interface PortfolioDto {
+  id: number;
+  title: string;
+  description: string;
+  projectLink: string;
+  coverImageUrl: string;
+  technologies: string;
+  projectType: ProjectType; // Use enum instead of string
+  userUsername: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PortfolioRequest {
+  title: string;
+  description: string;
+  projectLink?: string;
+  coverImageUrl?: string;
+  technologies?: string;
+  projectType?: ProjectType; // Use enum instead of string
+}
+
+// Add the ProjectType enum to match your backend
+// Update this in your user.ts or dto files
+export enum ProjectType {
+  OTHER = 'OTHER',
+  FRONTEND = 'FRONTEND',
+  MOBILE_APPLICATION = 'MOBILE_APPLICATION',
+  WEB_APPLICATION = 'WEB_APPLICATION',
+  FULLSTACK = 'FULLSTACK',
+  DEVOPS = 'DEVOPS',
+  API_BACKEND = 'API_BACKEND',
+  DATABASE_DESIGN = 'DATABASE_DESIGN',
+  DESKTOP_APPLICATION = 'DESKTOP_APPLICATION',
+  UI_UX_DESIGN = 'UI_UX_DESIGN'
+}
+
+// Add this to your user models file (src/app/shared/models/user.ts)
+export interface SkillDto {
+  id: number;
+  name: string;
+  category: string;
+}

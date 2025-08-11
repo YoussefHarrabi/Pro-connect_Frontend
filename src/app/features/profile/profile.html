@@ -2,493 +2,665 @@
   <!-- Shared Navbar -->
   <app-shared-navbar [config]="navbarConfig"></app-shared-navbar>
 
-  <!-- Back Button (only for viewing other profiles) -->
-  <div *ngIf="isViewingOtherProfile" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-    <button
-      (click)="goBackToTalentDiscovery()"
-      class="flex items-center text-green-600 hover:text-green-800 font-medium transition-colors duration-200"
-    >
-      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-      </svg>
-      {{ 'backToTalentDiscovery' | translate }}
-    </button>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex justify-center items-center min-h-[50vh]">
+    <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
   </div>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
-    <!-- Profile Header Section -->
-    <div class="bg-white rounded-lg border border-gray-200 p-8 mb-6">
-      <div class="flex items-start justify-between mb-6">
-        <div class="flex items-start space-x-6">
-          <!-- Avatar -->
-          <div class="relative">
-            <img
-              [src]="currentUser.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'"
-              [alt]="currentUser.username"
-              class="w-24 h-24 rounded-full object-cover border-4 border-gray-100"
-            />
-            <div *ngIf="currentUser.isVerified" 
-                 class="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1.5"
-                 [title]="'verified' | translate">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-              </svg>
-            </div>
-          </div>
-          
-          <!-- Profile Info -->
-          <div class="flex-1">
-            <div class="flex items-center mb-2">
-              <h1 class="text-2xl font-bold text-gray-900 mr-3">{{ '@' + currentUser.username }}</h1>
-              <span *ngIf="currentUser.isVerified" class="text-green-500" [title]="'verified' | translate">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                </svg>
-              </span>
-            </div>
-            
-            <div class="flex items-center mb-3">
-              <span class="text-gray-600 mr-2">
-                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                {{ currentUser.location || 'Location not specified' }}
-              </span>
-              <span class="text-gray-400">–</span>
-              <span class="text-gray-600 ml-2">{{ formatDate(currentUser.lastActive) }} {{ 'localTime' | translate }}</span>
-            </div>
-            
-            <div class="flex items-center space-x-4 mb-4">
-              <div class="flex items-center">
-                <div class="flex">
-                  <svg *ngFor="let star of getStarArray(currentUser.rating); let i = index"
-                       class="w-4 h-4"
-                       [class.text-yellow-400]="star === 1"
-                       [class.text-gray-300]="star === 0"
-                       fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                  </svg>
-                </div>
-                <span class="ml-2 text-sm font-medium text-gray-900">{{ currentUser.rating }}</span>
-              </div>
-              
-              <span *ngIf="currentUser.hourlyRate" class="text-lg font-bold text-gray-900">
-                €{{ currentUser.hourlyRate }}/hr
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="flex space-x-3">
-          <button
-            *ngIf="isViewingOtherProfile"
-            (click)="contactTalent()"
-            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors duration-200"
-          >
-            {{ 'contactTalent' | translate }}
-          </button>
-          
-          <button
-            *ngIf="!isViewingOtherProfile"
-            (click)="togglePublicView()"
-            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors duration-200"
-          >
-            {{ isPublicView ? ('editProfile' | translate) : ('seePublicView' | translate) }}
-          </button>
-        </div>
-      </div>
-      
-      <!-- Bio Section -->
-      <div class="mb-6">
-        <h2 class="text-xl font-bold text-gray-900 mb-3">{{ currentUser.role | titlecase }} {{ 'developer' | translate }}</h2>
-        <p class="text-gray-700 leading-relaxed">
-          {{ currentUser.bio || ('noBio' | translate) }}
-        </p>
-      </div>
+  <!-- Profile Content -->
+  <div *ngIf="!isLoading && currentUser">
+    <!-- Back Button (only for viewing other profiles) -->
+    <div *ngIf="isViewingOtherProfile" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <button
+        (click)="goBackToTalentDiscovery()"
+        class="flex items-center text-green-600 hover:text-green-800 font-medium transition-colors duration-200"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        {{ 'backToTalentDiscovery' | translate }}
+      </button>
     </div>
 
-    <!-- Main Content Area -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
-      <!-- Left Sidebar -->
-      <div class="lg:col-span-1 space-y-6">
-        
-        <!-- Resume Upload Section -->
-        <div *ngIf="!isViewingOtherProfile && !isPublicView" class="bg-white rounded-lg border border-gray-200 p-6">
-          <h4 class="font-bold text-gray-900 mb-4">{{ 'resume' | translate }}</h4>
-          
-          <div *ngIf="!currentUser.resumeFileName" class="text-center">
-            <input
-              type="file"
-              #resumeInput
-              (change)="onResumeFileSelected($event)"
-              accept=".pdf"
-              class="hidden"
-            />
-            <button
-              (click)="resumeInput.click()"
-              class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-green-400 hover:text-green-600 transition-colors duration-200"
-            >
-              <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-              </svg>
-              <p class="text-sm font-medium">{{ 'uploadResume' | translate }}</p>
-              <p class="text-xs text-gray-500 mt-1">{{ 'pdfOnly' | translate }}</p>
-            </button>
-          </div>
-          
-          <div *ngIf="currentUser.resumeFileName" class="space-y-3">
-            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div class="flex items-center">
-                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      <!-- Profile Header Section -->
+      <div class="bg-white rounded-lg border border-gray-200 p-8 mb-6">
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-start space-x-6">
+            <!-- Avatar -->
+            <div class="relative">
+              <!-- Profile Picture Display -->
+              <img
+                [src]="profilePicturePreview || getProfilePictureUrl(currentUser.profilePictureUrl) || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'"
+                [alt]="currentUser.username"
+                class="w-24 h-24 rounded-full object-cover border-4 border-gray-100"
+              />
+              
+              <!-- Verification Badge -->
+              <div *ngIf="currentUser.verified" 
+                   class="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1.5"
+                   [title]="'verified' | translate">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                 </svg>
-                <span class="text-sm font-medium text-green-800">{{ currentUser.resumeFileName }}</span>
               </div>
+              
+              <!-- Profile Picture Upload Controls (only for own profile) -->
+              <div *ngIf="!isViewingOtherProfile && !isPublicView" class="absolute inset-0 rounded-full bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center group">
+                <button
+                  (click)="triggerProfilePictureUpload()"
+                  class="opacity-0 group-hover:opacity-100 bg-white text-gray-700 rounded-full p-2 transition-opacity duration-200"
+                  [title]="'changeProfilePicture' | translate"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Hidden File Input -->
+              <input
+                type="file"
+                id="profilePictureInput"
+                (change)="onProfilePictureSelected($event)"
+                accept="image/*"
+                class="hidden"
+              />
+            </div>
+            
+            <!-- Profile Picture Upload Preview (if file selected) -->
+            <div *ngIf="selectedProfilePicture && !isViewingOtherProfile" class="flex flex-col items-center space-y-2 ml-4">
+              <div class="text-sm text-gray-600">{{ 'newProfilePicture' | translate }}</div>
               <div class="flex space-x-2">
                 <button
-                  (click)="downloadResume()"
-                  class="text-green-600 hover:text-green-800"
-                  [title]="'download' | translate"
+                  (click)="uploadProfilePicture()"
+                  [disabled]="isUploadingProfilePicture"
+                  class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
+                  <span *ngIf="isUploadingProfilePicture" class="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></span>
+                  {{ 'upload' | translate }}
                 </button>
                 <button
-                  (click)="removeResume()"
-                  class="text-red-600 hover:text-red-800"
-                  [title]="'remove' | translate"
+                  (click)="cancelProfilePictureUpload()"
+                  class="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                  </svg>
+                  {{ 'cancel' | translate }}
                 </button>
               </div>
             </div>
-            <p class="text-xs text-gray-500">
-              {{ 'uploadedOn' | translate }} {{ formatDate(currentUser.resumeUploadedDate!) }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Work Hours Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <h4 class="font-bold text-gray-900 mb-4">{{ 'hoursPerWeek' | translate }}</h4>
-          <p class="text-gray-600">{{ 'moreThan30Hours' | translate }}</p>
-          <p class="text-sm text-gray-500 mt-2">{{ 'noContractPreference' | translate }}</p>
-        </div>
-
-        <!-- Languages Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="font-bold text-gray-900">{{ 'languages' | translate }}</h4>
-            <button
-              *ngIf="!isViewingOtherProfile && !isPublicView"
-              (click)="openLanguagesModal()"
-              class="text-green-600 hover:text-green-800 font-medium text-sm"
-            >
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-              </svg>
-            </button>
-          </div>
-          <div class="space-y-2">
-            <div *ngFor="let language of currentUser.languages" class="flex items-center justify-between">
-              <span class="text-gray-700">{{ language }}:</span>
-              <span class="text-sm text-gray-500">{{ 'fluent' | translate }}</span>
-            </div>
-          </div>
-          <div *ngIf="currentUser.languages.length === 0" class="text-center py-4">
-            <p class="text-gray-500 text-sm">{{ 'noLanguages' | translate }}</p>
-          </div>
-        </div>
-
-        <!-- Education Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="font-bold text-gray-900">{{ 'education' | translate }}</h4>
-            <button
-              *ngIf="!isViewingOtherProfile && !isPublicView"
-              (click)="openEducationModal()"
-              class="text-green-600 hover:text-green-800 font-medium text-sm"
-            >
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              {{ 'add' | translate }}
-            </button>
-          </div>
-          
-          <div *ngIf="currentUser.education && currentUser.education.length > 0" class="space-y-4">
-            <div *ngFor="let edu of currentUser.education" class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
-              <h5 class="font-semibold text-gray-900">{{ edu.degree }}</h5>
-              <p class="text-green-600 font-medium">{{ edu.institution }}</p>
-              <p class="text-sm text-gray-500">{{ edu.startYear }} - {{ edu.endYear || ('present' | translate) }}</p>
-              <p *ngIf="edu.description" class="text-sm text-gray-600 mt-1">{{ edu.description }}</p>
-            </div>
-          </div>
-          
-          <div *ngIf="!currentUser.education || currentUser.education.length === 0" class="text-center py-4">
-            <p class="text-gray-500 text-sm">{{ 'noEducation' | translate }}</p>
-          </div>
-        </div>
-
-        <!-- Certifications Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="font-bold text-gray-900">{{ 'certifications' | translate }}</h4>
-            <button
-              *ngIf="!isViewingOtherProfile && !isPublicView"
-              (click)="openCertificationModal()"
-              class="text-green-600 hover:text-green-800 font-medium text-sm"
-            >
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              {{ 'add' | translate }}
-            </button>
-          </div>
-          
-          <div *ngIf="currentUser.certifications && currentUser.certifications.length > 0" class="space-y-3">
-            <div *ngFor="let cert of currentUser.certifications" class="flex items-start space-x-3">
-              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
+            
+            <!-- Profile Info -->
+            <div class="flex-1">
+              <div class="flex items-center mb-2">
+                <h1 class="text-2xl font-bold text-gray-900 mr-3">{{ '@' + currentUser.username }}</h1>
+                <span *ngIf="currentUser.verified" class="text-green-500" [title]="'verified' | translate">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                  </svg>
+                </span>
               </div>
-              <div class="flex-1">
-                <h5 class="font-semibold text-gray-900">{{ cert.name }}</h5>
-                <p class="text-sm text-gray-600">{{ cert.issuer }}</p>
-                <p class="text-xs text-gray-500">{{ formatDate(cert.issueDate) }}</p>
+              
+              <div class="flex items-center mb-3">
+                <span class="text-gray-600 mr-2">
+                  <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  {{ currentUser.location || 'Location not specified' }}
+                </span>
+                <span class="text-gray-400">–</span>
+                <span *ngIf="currentUser.lastActive" class="text-gray-600 ml-2">{{ formatDate(currentUser.lastActive) }} {{ 'localTime' | translate }}</span>
+              </div>
+              
+              <div class="flex items-center space-x-4 mb-4">
+                <div class="flex items-center">
+                  <div class="flex">
+                    <svg *ngFor="let star of getStarArray(currentUser.averageRating); let i = index"
+                         class="w-4 h-4"
+                         [class.text-yellow-400]="star === 1"
+                         [class.text-gray-300]="star === 0"
+                         fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                    </svg>
+                  </div>
+                  <span class="ml-2 text-sm font-medium text-gray-900">{{ currentUser.averageRating }}</span>
+                </div>
+                
+                <span *ngIf="currentUser.hourlyRate" class="text-lg font-bold text-gray-900">
+                  €{{ currentUser.hourlyRate }}/hr
+                </span>
               </div>
             </div>
           </div>
           
-          <div *ngIf="!currentUser.certifications || currentUser.certifications.length === 0" class="text-center py-4">
-            <p class="text-gray-500 text-sm">{{ 'noCertifications' | translate }}</p>
-          </div>
-        </div>
-
-        <!-- Social Links Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="font-bold text-gray-900">{{ 'socialLinks' | translate }}</h4>
+          <!-- Action Buttons -->
+          <div class="flex space-x-3">
             <button
-              *ngIf="!isViewingOtherProfile && !isPublicView"
-              (click)="openSocialLinksModal()"
-              class="text-green-600 hover:text-green-800 font-medium text-sm"
+              *ngIf="isViewingOtherProfile"
+              (click)="contactTalent()"
+              class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors duration-200"
             >
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-              </svg>
+              {{ 'contactTalent' | translate }}
+            </button>
+            
+            <button
+              *ngIf="!isViewingOtherProfile"
+              (click)="togglePublicView()"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors duration-200"
+            >
+              {{ isPublicView ? ('editProfile' | translate) : ('seePublicView' | translate) }}
             </button>
           </div>
-          
-          <div *ngIf="currentUser.socialLinks" class="space-y-3">
-            <div *ngIf="currentUser.socialLinks.github" class="flex items-center space-x-3">
-              <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
-              </svg>
-              <a [href]="currentUser.socialLinks.github" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
-                GitHub
-              </a>
-            </div>
-            
-            <div *ngIf="currentUser.socialLinks.stackoverflow" class="flex items-center space-x-3">
-              <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M12.658 14.577v-4.27h1.423V16H1.23v-5.693h1.424v4.27h9.004zm-8.583-1.423h7.16V11.73h-7.16v1.424zm.173-3.235l6.987 1.46.3-1.38L4.55 8.54l-.302 1.379zm.906-3.37l6.47 3.02.602-1.295-6.47-3.02-.602 1.295zm1.81-3.19l5.478 4.57.906-1.086L7.87 2.28l-.906 1.086zM10.502 0L9.338.863l4.27 5.735 1.164-.862L10.502 0z"/>
-              </svg>
-              <a [href]="currentUser.socialLinks.stackoverflow" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
-                Stack Overflow
-              </a>
-            </div>
-            
-            <div *ngIf="currentUser.socialLinks.linkedin" class="flex items-center space-x-3">
-              <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.338 16.338H13.67V12.16c0-.995-.017-2.277-1.387-2.277-1.39 0-1.601 1.086-1.601 2.207v4.248H8.014v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.778 3.203 4.092v4.711zM5.005 6.575a1.548 1.548 0 11-.003-3.096 1.548 1.548 0 01.003 3.096zm-1.337 9.763H6.34v-8.59H3.667v8.59zM17.668 1H2.328C1.595 1 1 1.581 1 2.298v15.403C1 18.418 1.595 19 2.328 19h15.34c.734 0 1.332-.582 1.332-1.299V2.298C19 1.581 18.402 1 17.668 1z" clip-rule="evenodd"></path>
-              </svg>
-              <a [href]="currentUser.socialLinks.linkedin" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
-                LinkedIn
-              </a>
-            </div>
-            
-            <div *ngIf="currentUser.socialLinks.website" class="flex items-center space-x-3">
-              <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-              </svg>
-              <a [href]="currentUser.socialLinks.website" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
-                {{ 'personalWebsite' | translate }}
-              </a>
-            </div>
-          </div>
-          
-          <div *ngIf="!hasSocialLinks()" class="text-center py-4">
-            <p class="text-gray-500 text-sm">{{ 'noSocialLinks' | translate }}</p>
-          </div>
         </div>
-
-        <!-- Verifications Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <h4 class="font-bold text-gray-900 mb-4">{{ 'verifications' | translate }}</h4>
-          <div class="space-y-3">
-            <div class="flex items-center">
-              <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-              </svg>
-              <span class="text-sm text-gray-700">{{ 'idVerified' | translate }}</span>
-            </div>
-          </div>
+        
+        <!-- Bio Section -->
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-gray-900 mb-3">
+            <span *ngFor="let role of currentUser.roles; let last = last">
+              {{ role | titlecase }}<span *ngIf="!last">, </span>
+            </span>
+          </h2>
+          <p class="text-gray-700 leading-relaxed">
+            {{ currentUser.bio || ('noBio' | translate) }}
+          </p>
         </div>
       </div>
 
-      <!-- Right Column - Work History & Portfolio -->
-      <div class="lg:col-span-3 space-y-6">
+      <!-- Main Content Area -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        <!-- Portfolio Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-gray-900">{{ 'portfolio' | translate }}</h3>
-            <div class="flex items-center space-x-2">
+        <!-- Left Sidebar -->
+        <div class="lg:col-span-1 space-y-6">
+          
+          <!-- Resume Upload Section -->
+          <div *ngIf="!isViewingOtherProfile && !isPublicView" class="bg-white rounded-lg border border-gray-200 p-6">
+            <h4 class="font-bold text-gray-900 mb-4">{{ 'resume' | translate }}</h4>
+            
+            <div *ngIf="!currentUser.resumeFileName" class="text-center">
+              <input
+                type="file"
+                #resumeInput
+                (change)="onResumeFileSelected($event)"
+                accept=".pdf"
+                class="hidden"
+              />
               <button
-                *ngIf="!isViewingOtherProfile && !isPublicView"
-                (click)="addPortfolioItem()"
-                class="text-green-600 hover:text-green-800 font-medium"
+                (click)="resumeInput.click()"
+                class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-green-400 hover:text-green-600 transition-colors duration-200"
               >
-                <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                 </svg>
-                {{ 'addPortfolio' | translate }}
+                <p class="text-sm font-medium">{{ 'uploadResume' | translate }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ 'pdfOnly' | translate }}</p>
               </button>
             </div>
-          </div>
-          
-          <!-- Portfolio Tabs -->
-          <div class="flex border-b border-gray-200 mb-6">
-            <button class="px-4 py-2 text-sm font-medium text-gray-900 border-b-2 border-green-500">
-              {{ 'published' | translate }}
-            </button>
-            <button *ngIf="!isViewingOtherProfile" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 ml-4">
-              {{ 'drafts' | translate }}
-            </button>
-          </div>
-          
-          <!-- Portfolio Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div
-              *ngFor="let item of currentUser.portfolio"
-              class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
-            >
-              <img
-                *ngIf="item.coverImage"
-                [src]="item.coverImage"
-                [alt]="item.title"
-                class="w-full h-40 object-cover"
-              />
-              <div class="p-4">
-                <h4 class="font-bold text-gray-900 mb-2">{{ item.title }}</h4>
-                <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ item.description }}</p>
-                <div class="flex items-center justify-between">
+            
+            <div *ngIf="currentUser.resumeFileName" class="space-y-3">
+              <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div class="flex items-center">
+                  <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span class="text-sm font-medium text-green-800">{{ currentUser.resumeFileName }}</span>
+                </div>
+                <div class="flex space-x-2">
                   <button
-                    *ngIf="item.projectUrl"
-                    (click)="openProject(item.projectUrl)"
-                    class="text-green-600 hover:text-green-800 text-sm font-medium"
+                    (click)="downloadResume()"
+                    class="text-green-600 hover:text-green-800"
+                    [title]="'download' | translate"
                   >
-                    {{ 'viewProject' | translate }} →
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    (click)="removeResume()"
+                    class="text-red-600 hover:text-red-800"
+                    [title]="'remove' | translate"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
                   </button>
                 </div>
               </div>
+              <p *ngIf="currentUser.resumeUploadedDate" class="text-xs text-gray-500">
+                {{ 'uploadedOn' | translate }} {{ formatDate(currentUser.resumeUploadedDate) }}
+              </p>
             </div>
           </div>
-          
-          <div *ngIf="currentUser.portfolio.length === 0" class="text-center py-12">
-            <p class="text-gray-500 mb-4">{{ 'noPortfolio' | translate }}</p>
-          </div>
-        </div>
 
-        <!-- Work History Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-gray-900">{{ 'workHistory' | translate }}</h3>
-            <button
-              *ngIf="!isViewingOtherProfile && !isPublicView"
-              (click)="openWorkHistoryModal()"
-              class="text-green-600 hover:text-green-800 font-medium text-sm"
-            >
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              {{ 'add' | translate }}
-            </button>
+          <!-- Work Hours Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h4 class="font-bold text-gray-900 mb-4">{{ 'hoursPerWeek' | translate }}</h4>
+            <p class="text-gray-600">{{ 'moreThan30Hours' | translate }}</p>
+            <p class="text-sm text-gray-500 mt-2">{{ 'noContractPreference' | translate }}</p>
           </div>
-          
-          <div *ngIf="currentUser.experience.length === 0" class="text-center py-12">
-            <p class="text-gray-500">{{ 'noWorkHistory' | translate }}</p>
+
+          <!-- Languages Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-bold text-gray-900">{{ 'languages' | translate }}</h4>
+              <button
+                *ngIf="!isViewingOtherProfile && !isPublicView"
+                (click)="openLanguagesModal()"
+                class="text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="space-y-2">
+              <div *ngFor="let language of currentUser.languages" class="flex items-center justify-between">
+                <span class="text-gray-700">{{ language }}:</span>
+                <span class="text-sm text-gray-500">{{ 'fluent' | translate }}</span>
+              </div>
+            </div>
+            <div *ngIf="!currentUser.languages || currentUser.languages.length === 0" class="text-center py-4">
+              <p class="text-gray-500 text-sm">{{ 'noLanguages' | translate }}</p>
+            </div>
           </div>
-          
-          <div *ngIf="currentUser.experience.length > 0" class="space-y-6">
-            <div
-              *ngFor="let exp of currentUser.experience"
-              class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
-            >
-              <div class="flex justify-between items-start mb-3">
-                <div>
-                  <h4 class="font-bold text-gray-900">{{ exp.title }}</h4>
-                  <p class="text-green-600 font-medium">{{ exp.company }}</p>
+
+          <!-- Education Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-bold text-gray-900">{{ 'education' | translate }}</h4>
+              <button
+                *ngIf="!isViewingOtherProfile && !isPublicView"
+                (click)="openEducationModal()"
+                class="text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                {{ 'add' | translate }}
+              </button>
+            </div>
+            
+            <div *ngIf="currentUser.education && currentUser.education.length > 0" class="space-y-4">
+              <div *ngFor="let edu of currentUser.education" class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0 relative">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <h5 class="font-semibold text-gray-900">{{ edu.degree }}</h5>
+                    <p class="text-green-600 font-medium">{{ edu.institution }}</p>
+                    <p class="text-sm text-gray-500">{{ edu.startYear }} - {{ edu.endYear || ('present' | translate) }}</p>
+                    <p *ngIf="edu.description" class="text-sm text-gray-600 mt-1">{{ edu.description }}</p>
+                  </div>
+                  <div *ngIf="!isViewingOtherProfile && !isPublicView" class="flex space-x-2 ml-2">
+                    <button
+                      (click)="openEducationModal(edu)"
+                      class="text-green-600 hover:text-green-800 text-sm"
+                      [title]="'edit' | translate"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                      </svg>
+                    </button>
+                    <button
+                      (click)="deleteEducation(edu.id)"
+                      class="text-red-600 hover:text-red-800 text-sm"
+                      [title]="'delete' | translate"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <div class="flex items-center space-x-3">
-                  <span class="text-sm text-gray-500">
-                    {{ formatDate(exp.startDate) }} - 
-                    {{ exp.isCurrent ? ('present' | translate) : formatDate(exp.endDate!) }}
-                  </span>
+              </div>
+            </div>
+            
+            <div *ngIf="!currentUser.education || currentUser.education.length === 0" class="text-center py-4">
+              <p class="text-gray-500 text-sm">{{ 'noEducation' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Certifications Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-bold text-gray-900">{{ 'certifications' | translate }}</h4>
+              <button
+                *ngIf="!isViewingOtherProfile && !isPublicView"
+                (click)="openCertificationModal()"
+                class="text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                {{ 'add' | translate }}
+              </button>
+            </div>
+            
+            <div *ngIf="currentUser.certifications && currentUser.certifications.length > 0" class="space-y-3">
+              <div *ngFor="let cert of currentUser.certifications" class="flex items-start space-x-3 relative">
+                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h5 class="font-semibold text-gray-900">{{ cert.name }}</h5>
+                  <p class="text-sm text-gray-600">{{ cert.issuer }}</p>
+                  <p class="text-xs text-gray-500">{{ formatDate(cert.issueDate) }}</p>
+                </div>
+                <div *ngIf="!isViewingOtherProfile && !isPublicView" class="flex space-x-2">
                   <button
-                    *ngIf="!isViewingOtherProfile && !isPublicView"
-                    (click)="openWorkHistoryModal(exp)"
+                    (click)="openCertificationModal(cert)"
                     class="text-green-600 hover:text-green-800 text-sm"
+                    [title]="'edit' | translate"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                     </svg>
                   </button>
+                  <button
+                    (click)="deleteCertification(cert.id)"
+                    class="text-red-600 hover:text-red-800 text-sm"
+                    [title]="'delete' | translate"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
-              <p class="text-gray-700">{{ exp.description }}</p>
+            </div>
+            
+            <div *ngIf="!currentUser.certifications || currentUser.certifications.length === 0" class="text-center py-4">
+              <p class="text-gray-500 text-sm">{{ 'noCertifications' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Social Links Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-bold text-gray-900">{{ 'socialLinks' | translate }}</h4>
+              <button
+                *ngIf="!isViewingOtherProfile && !isPublicView"
+                (click)="openSocialLinksModal()"
+                class="text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+              </button>
+            </div>
+            
+            <div *ngIf="hasSocialLinks()" class="space-y-3">
+              <div *ngIf="currentUser.githubUrl" class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                </svg>
+                <a [href]="currentUser.githubUrl" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                  GitHub
+                </a>
+              </div>
+              
+              <div *ngIf="currentUser.stackoverflowUrl" class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M12.658 14.577v-4.27h1.423V16H1.23v-5.693h1.424v4.27h9.004zm-8.583-1.423h7.16V11.73h-7.16v1.424zm.173-3.235l6.987 1.46.3-1.38L4.55 8.54l-.302 1.379zm.906-3.37l6.47 3.02.602-1.295-6.47-3.02-.602 1.295zm1.81-3.19l5.478 4.57.906-1.086L7.87 2.28l-.906 1.086zM10.502 0L9.338.863l4.27 5.735 1.164-.862L10.502 0z"/>
+                </svg>
+                <a [href]="currentUser.stackoverflowUrl" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                  Stack Overflow
+                </a>
+              </div>
+              
+              <div *ngIf="currentUser.linkedinUrl" class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.338 16.338H13.67V12.16c0-.995-.017-2.277-1.387-2.277-1.39 0-1.601 1.086-1.601 2.207v4.248H8.014v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.778 3.203 4.092v4.711zM5.005 6.575a1.548 1.548 0 11-.003-3.096 1.548 1.548 0 01.003 3.096zm-1.337 9.763H6.34v-8.59H3.667v8.59zM17.668 1H2.328C1.595 1 1 1.581 1 2.298v15.403C1 18.418 1.595 19 2.328 19h15.34c.734 0 1.332-.582 1.332-1.299V2.298C19 1.581 18.402 1 17.668 1z" clip-rule="evenodd"></path>
+                </svg>
+                <a [href]="currentUser.linkedinUrl" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                  LinkedIn
+                </a>
+              </div>
+              
+              <div *ngIf="currentUser.personalWebsiteUrl" class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                </svg>
+                <a [href]="currentUser.personalWebsiteUrl" target="_blank" class="text-gray-700 hover:text-green-600 text-sm">
+                  {{ 'personalWebsite' | translate }}
+                </a>
+              </div>
+            </div>
+            
+            <div *ngIf="!hasSocialLinks()" class="text-center py-4">
+              <p class="text-gray-500 text-sm">{{ 'noSocialLinks' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Verifications Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h4 class="font-bold text-gray-900 mb-4">{{ 'verifications' | translate }}</h4>
+            <div class="space-y-3">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="text-sm text-gray-700">{{ 'idVerified' | translate }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Skills Section -->
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-gray-900">{{ 'skills' | translate }}</h3>
-            <button
-              *ngIf="!isViewingOtherProfile && !isPublicView"
-              (click)="openSkillsModal()"
-              class="text-green-600 hover:text-green-800 font-medium text-sm"
-            >
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-              </svg>
-            </button>
-          </div>
+        <!-- Right Column - Work History & Portfolio -->
+        <div class="lg:col-span-3 space-y-6">
           
-          <div class="flex flex-wrap gap-2">
-            <span
-              *ngFor="let skill of currentUser.skills"
-              class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium"
-            >
-              {{ skill }}
-            </span>
+          <!-- Portfolio Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-xl font-bold text-gray-900">{{ 'portfolio' | translate }}</h3>
+              <div class="flex items-center space-x-2">
+                <button
+                  *ngIf="!isViewingOtherProfile && !isPublicView"
+                  (click)="addPortfolioItem()"
+                  class="text-green-600 hover:text-green-800 font-medium"
+                >
+                  <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  {{ 'addPortfolio' | translate }}
+                </button>
+              </div>
+            </div>
+            
+            <!-- Portfolio Tabs -->
+            <div class="flex border-b border-gray-200 mb-6">
+              <button class="px-4 py-2 text-sm font-medium text-gray-900 border-b-2 border-green-500">
+                {{ 'published' | translate }}
+              </button>
+              <button *ngIf="!isViewingOtherProfile" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 ml-4">
+                {{ 'drafts' | translate }}
+              </button>
+            </div>
+            
+            <!-- Portfolio Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div
+                *ngFor="let item of currentUser.portfolios"
+                class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200 relative"
+              >
+                <img
+                  *ngIf="item.coverImageUrl"
+                  [src]="getImageUrl(item.coverImageUrl)"
+                  [alt]="item.title"
+                  class="w-full h-40 object-cover"
+                  (error)="onImageError($event)"
+                />
+                <div class="p-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-bold text-gray-900 flex-1">{{ item.title }}</h4>
+                    <div *ngIf="!isViewingOtherProfile && !isPublicView" class="flex space-x-2 ml-2">
+                      <button
+                        (click)="openPortfolioModal(item)"
+                        class="text-green-600 hover:text-green-800 text-sm"
+                        [title]="'edit' | translate"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                      </button>
+                      <button
+                        (click)="deletePortfolioItem(item.id)"
+                        class="text-red-600 hover:text-red-800 text-sm"
+                        [title]="'delete' | translate"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ item.description }}</p>
+                  
+                  <!-- Technologies Section -->
+                  <div *ngIf="item.technologies" class="mb-3">
+                    <div class="flex flex-wrap gap-1">
+                      <span
+                        *ngFor="let tech of getTechnologiesArray(item.technologies)"
+                        class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium"
+                      >
+                        {{ tech }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Project Type Badge -->
+                  <div *ngIf="item.projectType" class="mb-3">
+                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                      {{ getProjectTypeLabel(item.projectType) }}
+                    </span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <button
+                      *ngIf="item.projectLink"
+                      (click)="openProject(item.projectLink)"
+                      class="text-green-600 hover:text-green-800 text-sm font-medium"
+                    >
+                      {{ 'viewProject' | translate }} →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div *ngIf="!currentUser.portfolios || currentUser.portfolios.length === 0" class="text-center py-12">
+              <p class="text-gray-500 mb-4">{{ 'noPortfolio' | translate }}</p>
+            </div>
           </div>
-          
-          <div *ngIf="currentUser.skills.length === 0" class="text-center py-8">
-            <p class="text-gray-500">{{ 'noSkills' | translate }}</p>
+
+          <!-- Work History Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-xl font-bold text-gray-900">{{ 'workHistory' | translate }}</h3>
+              <button
+                *ngIf="!isViewingOtherProfile && !isPublicView"
+                (click)="openWorkHistoryModal()"
+                class="text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                {{ 'add' | translate }}
+              </button>
+            </div>
+            
+            <div *ngIf="!currentUser.experience || currentUser.experience.length === 0" class="text-center py-12">
+              <p class="text-gray-500">{{ 'noWorkHistory' | translate }}</p>
+            </div>
+            
+            <div *ngIf="currentUser.experience && currentUser.experience.length > 0" class="space-y-6">
+              <div
+                *ngFor="let exp of currentUser.experience"
+                class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
+              >
+                <div class="flex justify-between items-start mb-3">
+                  <div class="flex-1">
+                    <h4 class="font-bold text-gray-900">{{ exp.title }}</h4>
+                    <p class="text-green-600 font-medium">{{ exp.company }}</p>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-500">
+                      {{ formatDate(exp.startDate) }} - 
+                      {{ exp.isCurrent ? ('present' | translate) : formatDate(exp.endDate!) }}
+                    </span>
+                    <div *ngIf="!isViewingOtherProfile && !isPublicView" class="flex space-x-2">
+                      <button
+                        (click)="openWorkHistoryModal(exp)"
+                        class="text-green-600 hover:text-green-800 text-sm"
+                        [title]="'edit' | translate"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                      </button>
+                      <button
+                        (click)="deleteExperience(exp.id)"
+                        class="text-red-600 hover:text-red-800 text-sm"
+                        [title]="'delete' | translate"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <p *ngIf="exp.description" class="text-gray-700">{{ exp.description }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Skills Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-xl font-bold text-gray-900">{{ 'skills' | translate }}</h3>
+              <button
+                *ngIf="!isViewingOtherProfile && !isPublicView"
+                (click)="openSkillsModal()"
+                class="text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+              </button>
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+              <span
+                *ngFor="let skill of currentUser.skills"
+                class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium"
+              >
+                {{ skill.name }}
+              </span>
+            </div>
+            
+            <div *ngIf="!currentUser.skills || currentUser.skills.length === 0" class="text-center py-8">
+              <p class="text-gray-500">{{ 'noSkills' | translate }}</p>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!isLoading && !currentUser" class="flex justify-center items-center min-h-[50vh]">
+    <div class="text-center">
+      <div class="text-6xl text-gray-400 mb-4">⚠️</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ 'profileNotFound' | translate }}</h2>
+      <p class="text-gray-600 mb-4">{{ 'profileNotFoundMessage' | translate }}</p>
+      <button
+        (click)="goBackToTalentDiscovery()"
+        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+      >
+        {{ 'backToTalentDiscovery' | translate }}
+      </button>
     </div>
   </div>
 
@@ -498,7 +670,7 @@
       <div class="p-6">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-semibold text-gray-900">
-            {{ isEditingEducation ? 'editEducation' : 'addEducation' | translate }}
+            {{ isEditingEducation ? ('editEducation' | translate) : ('addEducation' | translate) }}
           </h3>
           <button
             (click)="closeEducationModal()"
@@ -517,9 +689,13 @@
               <input
                 type="text"
                 formControlName="degree"
+                [class.border-red-500]="isEducationFieldInvalid('degree')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Bachelor of Science in Computer Science"
               />
+              <div *ngIf="isEducationFieldInvalid('degree')" class="mt-1 text-sm text-red-600">
+                {{ getEducationErrorMessage('degree') }}
+              </div>
             </div>
 
             <div>
@@ -529,9 +705,13 @@
               <input
                 type="text"
                 formControlName="institution"
+                [class.border-red-500]="isEducationFieldInvalid('institution')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="University Name"
               />
+              <div *ngIf="isEducationFieldInvalid('institution')" class="mt-1 text-sm text-red-600">
+                {{ getEducationErrorMessage('institution') }}
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -542,9 +722,13 @@
                 <input
                   type="number"
                   formControlName="startYear"
+                  [class.border-red-500]="isEducationFieldInvalid('startYear')"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="2018"
                 />
+                <div *ngIf="isEducationFieldInvalid('startYear')" class="mt-1 text-sm text-red-600">
+                  {{ getEducationErrorMessage('startYear') }}
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -553,9 +737,13 @@
                 <input
                   type="number"
                   formControlName="endYear"
+                  [class.border-red-500]="isEducationFieldInvalid('endYear')"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="2022"
                 />
+                <div *ngIf="isEducationFieldInvalid('endYear')" class="mt-1 text-sm text-red-600">
+                  {{ getEducationErrorMessage('endYear') }}
+                </div>
               </div>
             </div>
 
@@ -565,10 +753,14 @@
               </label>
               <textarea
                 formControlName="description"
+                [class.border-red-500]="isEducationFieldInvalid('description')"
                 rows="3"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Brief description of your studies..."
               ></textarea>
+              <div *ngIf="isEducationFieldInvalid('description')" class="mt-1 text-sm text-red-600">
+                {{ getEducationErrorMessage('description') }}
+              </div>
             </div>
 
             <div>
@@ -578,9 +770,13 @@
               <input
                 type="text"
                 formControlName="gpa"
+                [class.border-red-500]="isEducationFieldInvalid('gpa')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="3.8"
               />
+              <div *ngIf="isEducationFieldInvalid('gpa')" class="mt-1 text-sm text-red-600">
+                {{ getEducationErrorMessage('gpa') }}
+              </div>
             </div>
           </div>
 
@@ -597,7 +793,7 @@
               [disabled]="educationForm.invalid || isLoading"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ isEditingEducation ? 'update' : 'add' | translate }}
+              {{ isEditingEducation ? ('update' | translate) : ('add' | translate) }}
             </button>
           </div>
         </form>
@@ -611,7 +807,7 @@
       <div class="p-6">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-semibold text-gray-900">
-            {{ isEditingCertification ? 'editCertification' : 'addCertification' | translate }}
+            {{ isEditingCertification ? ('editCertification' | translate) : ('addCertification' | translate) }}
           </h3>
           <button
             (click)="closeCertificationModal()"
@@ -630,9 +826,13 @@
               <input
                 type="text"
                 formControlName="name"
+                [class.border-red-500]="isCertificationFieldInvalid('name')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="AWS Certified Solutions Architect"
               />
+              <div *ngIf="isCertificationFieldInvalid('name')" class="mt-1 text-sm text-red-600">
+                {{ getCertificationErrorMessage('name') }}
+              </div>
             </div>
 
             <div>
@@ -642,9 +842,13 @@
               <input
                 type="text"
                 formControlName="issuer"
+                [class.border-red-500]="isCertificationFieldInvalid('issuer')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Amazon Web Services"
               />
+              <div *ngIf="isCertificationFieldInvalid('issuer')" class="mt-1 text-sm text-red-600">
+                {{ getCertificationErrorMessage('issuer') }}
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -655,8 +859,12 @@
                 <input
                   type="date"
                   formControlName="issueDate"
+                  [class.border-red-500]="isCertificationFieldInvalid('issueDate')"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
+                <div *ngIf="isCertificationFieldInvalid('issueDate')" class="mt-1 text-sm text-red-600">
+                  {{ getCertificationErrorMessage('issueDate') }}
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -665,8 +873,12 @@
                 <input
                   type="date"
                   formControlName="expiryDate"
+                  [class.border-red-500]="isCertificationFieldInvalid('expiryDate')"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
+                <div *ngIf="isCertificationFieldInvalid('expiryDate')" class="mt-1 text-sm text-red-600">
+                  {{ getCertificationErrorMessage('expiryDate') }}
+                </div>
               </div>
             </div>
 
@@ -677,9 +889,13 @@
               <input
                 type="text"
                 formControlName="credentialId"
+                [class.border-red-500]="isCertificationFieldInvalid('credentialId')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Certificate ID"
               />
+              <div *ngIf="isCertificationFieldInvalid('credentialId')" class="mt-1 text-sm text-red-600">
+                {{ getCertificationErrorMessage('credentialId') }}
+              </div>
             </div>
 
             <div>
@@ -689,9 +905,13 @@
               <input
                 type="url"
                 formControlName="credentialUrl"
+                [class.border-red-500]="isCertificationFieldInvalid('credentialUrl')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="https://example.com/certificate"
               />
+              <div *ngIf="isCertificationFieldInvalid('credentialUrl')" class="mt-1 text-sm text-red-600">
+                {{ getCertificationErrorMessage('credentialUrl') }}
+              </div>
             </div>
           </div>
 
@@ -708,7 +928,7 @@
               [disabled]="certificationForm.invalid || isLoading"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ isEditingCertification ? 'update' : 'add' | translate }}
+              {{ isEditingCertification ? ('update' | translate) : ('add' | translate) }}
             </button>
           </div>
         </form>
@@ -741,9 +961,13 @@
               <input
                 type="text"
                 formControlName="languages"
+                [class.border-red-500]="isLanguagesFieldInvalid('languages')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="English, French, Spanish"
               />
+              <div *ngIf="isLanguagesFieldInvalid('languages')" class="mt-1 text-sm text-red-600">
+                {{ getLanguagesErrorMessage('languages') }}
+              </div>
               <p class="text-xs text-gray-500 mt-1">{{ 'languagesHint' | translate }}</p>
             </div>
           </div>
@@ -794,9 +1018,13 @@
               <input
                 type="url"
                 formControlName="github"
+                [class.border-red-500]="isSocialLinksFieldInvalid('github')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="https://github.com/username"
               />
+              <div *ngIf="isSocialLinksFieldInvalid('github')" class="mt-1 text-sm text-red-600">
+                {{ getSocialLinksErrorMessage('github') }}
+              </div>
             </div>
 
             <div>
@@ -806,9 +1034,13 @@
               <input
                 type="url"
                 formControlName="stackoverflow"
+                [class.border-red-500]="isSocialLinksFieldInvalid('stackoverflow')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="https://stackoverflow.com/users/123456/username"
               />
+              <div *ngIf="isSocialLinksFieldInvalid('stackoverflow')" class="mt-1 text-sm text-red-600">
+                {{ getSocialLinksErrorMessage('stackoverflow') }}
+              </div>
             </div>
 
             <div>
@@ -818,9 +1050,13 @@
               <input
                 type="url"
                 formControlName="linkedin"
+                [class.border-red-500]="isSocialLinksFieldInvalid('linkedin')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="https://linkedin.com/in/username"
               />
+              <div *ngIf="isSocialLinksFieldInvalid('linkedin')" class="mt-1 text-sm text-red-600">
+                {{ getSocialLinksErrorMessage('linkedin') }}
+              </div>
             </div>
 
             <div>
@@ -830,9 +1066,13 @@
               <input
                 type="url"
                 formControlName="website"
+                [class.border-red-500]="isSocialLinksFieldInvalid('website')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="https://yourwebsite.com"
               />
+              <div *ngIf="isSocialLinksFieldInvalid('website')" class="mt-1 text-sm text-red-600">
+                {{ getSocialLinksErrorMessage('website') }}
+              </div>
             </div>
           </div>
 
@@ -863,7 +1103,7 @@
       <div class="p-6">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-semibold text-gray-900">
-            {{ editingPortfolioItem ? 'editPortfolioItem' : 'addPortfolioItem' | translate }}
+            {{ isEditingPortfolio ? ('editPortfolioItem' | translate) : ('addPortfolioItem' | translate) }}
           </h3>
           <button
             (click)="closePortfolioModal()"
@@ -873,87 +1113,174 @@
           </button>
         </div>
 
-        <form [formGroup]="portfolioForm" (ngSubmit)="savePortfolioItem()">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                {{ 'projectTitle' | translate }} *
-              </label>
-              <input
-                type="text"
-                formControlName="title"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="My Awesome Project"
-              />
-            </div>
+      <form [formGroup]="portfolioForm" (ngSubmit)="savePortfolioItem()">
+  <div class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        {{ 'projectTitle' | translate }} *
+      </label>
+      <input
+        type="text"
+        formControlName="title"
+        [class.border-red-500]="isPortfolioFieldInvalid('title')"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        placeholder="My Awesome Project"
+      />
+      <div *ngIf="isPortfolioFieldInvalid('title')" class="mt-1 text-sm text-red-600">
+        {{ getPortfolioErrorMessage('title') }}
+      </div>
+    </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                {{ 'description' | translate }} *
-              </label>
-              <textarea
-                formControlName="description"
-                rows="4"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Describe your project..."
-              ></textarea>
-            </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        {{ 'description' | translate }} *
+      </label>
+      <textarea
+        formControlName="description"
+        [class.border-red-500]="isPortfolioFieldInvalid('description')"
+        rows="4"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        placeholder="Describe your project..."
+      ></textarea>
+      <div *ngIf="isPortfolioFieldInvalid('description')" class="mt-1 text-sm text-red-600">
+        {{ getPortfolioErrorMessage('description') }}
+      </div>
+    </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                {{ 'projectUrl' | translate }}
-              </label>
-              <input
-                type="url"
-                formControlName="projectUrl"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="https://project-demo.com"
-              />
-            </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        {{ 'projectUrl' | translate }}
+      </label>
+      <input
+        type="url"
+        formControlName="projectUrl"
+        [class.border-red-500]="isPortfolioFieldInvalid('projectUrl')"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        placeholder="https://project-demo.com"
+      />
+      <div *ngIf="isPortfolioFieldInvalid('projectUrl')" class="mt-1 text-sm text-red-600">
+        {{ getPortfolioErrorMessage('projectUrl') }}
+      </div>
+    </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                {{ 'imageUrl' | translate }}
-              </label>
-              <input
-                type="url"
-                formControlName="imageUrl"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="https://example.com/project-image.jpg"
-              />
-            </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        {{ 'imageUrl' | translate }}
+      </label>
+      
+      <!-- File Input (Hidden) -->
+      <input
+        type="file"
+        id="portfolioImageInput"
+        (change)="onPortfolioImageSelected($event)"
+        accept="image/*"
+        class="hidden"
+      />
+      
+      <!-- Image Upload Button and Preview -->
+      <div class="space-y-3">
+        <!-- Upload Button -->
+        <button
+          type="button"
+          (click)="triggerPortfolioImageUpload()"
+          class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-green-400 hover:text-green-600 transition-colors duration-200 flex flex-col items-center"
+        >
+          <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          <p class="text-sm font-medium">{{ 'uploadProjectImage' | translate }}</p>
+          <p class="text-xs text-gray-500 mt-1">JPG, PNG, GIF, WEBP up to 10MB</p>
+        </button>
+        
+        <!-- Image Preview -->
+        <div *ngIf="portfolioImagePreview" class="relative">
+          <img
+            [src]="portfolioImagePreview"
+            alt="Portfolio image preview"
+            class="w-full h-48 object-cover rounded-lg border"
+          />
+          <button
+            type="button"
+            (click)="removePortfolioImage()"
+            class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+            [title]="'remove' | translate"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                {{ 'technologies' | translate }}
-              </label>
-              <input
-                type="text"
-                formControlName="technologies"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="React, Node.js, MongoDB"
-              />
-              <p class="text-xs text-gray-500 mt-1">{{ 'separateWithCommas' | translate }}</p>
-            </div>
-          </div>
+    <!-- ✅ CORRECTED PROJECT TYPE DROPDOWN -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        {{ 'projectType' | translate }}
+      </label>
+      <select
+        formControlName="projectType"
+        [class.border-red-500]="isPortfolioFieldInvalid('projectType')"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+      >
+        <!-- ✅ Updated option values to match backend enum -->
+        <option value="WEB_APPLICATION">{{ 'webApplication' | translate }}</option>
+        <option value="MOBILE_APPLICATION">{{ 'mobileApplication' | translate }}</option>
+        <option value="DESKTOP_APPLICATION">{{ 'desktopApplication' | translate }}</option>
+        <option value="FRONTEND">{{ 'frontend' | translate }}</option>
+        <option value="API_BACKEND">{{ 'apiBackend' | translate }}</option>
+        <option value="FULLSTACK">{{ 'fullStack' | translate }}</option>
+        <option value="UI_UX_DESIGN">{{ 'uiUxDesign' | translate }}</option>
+        <option value="DATABASE_DESIGN">{{ 'databaseDesign' | translate }}</option>
+        <option value="DEVOPS">{{ 'devOps' | translate }}</option>
+        <option value="OTHER">{{ 'other' | translate }}</option>
+      </select>
+      <div *ngIf="isPortfolioFieldInvalid('projectType')" class="mt-1 text-sm text-red-600">
+        {{ getPortfolioErrorMessage('projectType') }}
+      </div>
+    </div>
 
-          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
-            <button
-              type="button"
-              (click)="closePortfolioModal()"
-              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            >
-              {{ 'cancel' | translate }}
-            </button>
-            <button
-              type="submit"
-              [disabled]="portfolioForm.invalid || isLoading"
-              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ editingPortfolioItem ? 'update' : 'add' | translate }}
-            </button>
-          </div>
-        </form>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        {{ 'technologies' | translate }}
+      </label>
+      <input
+        type="text"
+        formControlName="technologies"
+        [class.border-red-500]="isPortfolioFieldInvalid('technologies')"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        placeholder="React, Node.js, MongoDB"
+      />
+      <p class="text-xs text-gray-500 mt-1">{{ 'separateWithCommas' | translate }}</p>
+      <div *ngIf="isPortfolioFieldInvalid('technologies')" class="mt-1 text-sm text-red-600">
+        {{ getPortfolioErrorMessage('technologies') }}
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+    <button
+      type="button"
+      (click)="closePortfolioModal()"
+      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+    >
+      {{ 'cancel' | translate }}
+    </button>
+    <button
+      type="submit"
+      [disabled]="portfolioForm.invalid || isLoading"
+      class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <span *ngIf="isLoading" class="mr-2">
+        <svg class="animate-spin h-4 w-4 inline" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </span>
+      {{ isEditingPortfolio ? ('update' | translate) : ('add' | translate) }}
+    </button>
+  </div>
+</form>
       </div>
     </div>
   </div>
@@ -964,7 +1291,7 @@
       <div class="p-6">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-semibold text-gray-900">
-            {{ editingWorkHistory ? 'editWorkHistory' : 'addWorkHistory' | translate }}
+            {{ editingWorkHistory ? ('editWorkHistory' | translate) : ('addWorkHistory' | translate) }}
           </h3>
           <button
             (click)="closeWorkHistoryModal()"
@@ -983,9 +1310,13 @@
               <input
                 type="text"
                 formControlName="title"
+                [class.border-red-500]="isWorkHistoryFieldInvalid('title')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Senior Developer"
               />
+              <div *ngIf="isWorkHistoryFieldInvalid('title')" class="mt-1 text-sm text-red-600">
+                {{ getWorkHistoryErrorMessage('title') }}
+              </div>
             </div>
 
             <div>
@@ -995,9 +1326,13 @@
               <input
                 type="text"
                 formControlName="company"
+                [class.border-red-500]="isWorkHistoryFieldInvalid('company')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Tech Company Inc."
               />
+              <div *ngIf="isWorkHistoryFieldInvalid('company')" class="mt-1 text-sm text-red-600">
+                {{ getWorkHistoryErrorMessage('company') }}
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -1008,8 +1343,12 @@
                 <input
                   type="date"
                   formControlName="startDate"
+                  [class.border-red-500]="isWorkHistoryFieldInvalid('startDate')"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
+                <div *ngIf="isWorkHistoryFieldInvalid('startDate')" class="mt-1 text-sm text-red-600">
+                  {{ getWorkHistoryErrorMessage('startDate') }}
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -1018,8 +1357,12 @@
                 <input
                   type="date"
                   formControlName="endDate"
+                  [class.border-red-500]="isWorkHistoryFieldInvalid('endDate')"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
+                <div *ngIf="isWorkHistoryFieldInvalid('endDate')" class="mt-1 text-sm text-red-600">
+                  {{ getWorkHistoryErrorMessage('endDate') }}
+                </div>
                 <div class="mt-2">
                   <label class="flex items-center">
                     <input type="checkbox" formControlName="isCurrent" class="mr-2">
@@ -1035,10 +1378,14 @@
               </label>
               <textarea
                 formControlName="description"
+                [class.border-red-500]="isWorkHistoryFieldInvalid('description')"
                 rows="4"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Describe your role and achievements..."
               ></textarea>
+              <div *ngIf="isWorkHistoryFieldInvalid('description')" class="mt-1 text-sm text-red-600">
+                {{ getWorkHistoryErrorMessage('description') }}
+              </div>
             </div>
           </div>
 
@@ -1055,7 +1402,7 @@
               [disabled]="workHistoryForm.invalid || isLoading"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ editingWorkHistory ? 'update' : 'add' | translate }}
+              {{ editingWorkHistory ? ('update' | translate) : ('add' | translate) }}
             </button>
           </div>
         </form>
@@ -1065,7 +1412,7 @@
 
   <!-- Skills Modal -->
   <div *ngIf="showSkillsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-semibold text-gray-900">
@@ -1079,46 +1426,102 @@
           </button>
         </div>
 
-        <form [formGroup]="skillsForm" (ngSubmit)="saveSkills()">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                {{ 'skills' | translate }}
-              </label>
-              <textarea 
-                formControlName="skillsText" 
-                rows="6" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="{{ 'enterSkillsPlaceholder' | translate }}"></textarea>
-              <p class="text-xs text-gray-500 mt-1">{{ 'separateSkillsWithCommas' | translate }}</p>
+        <!-- Search and Filter Section -->
+        <div class="mb-6">
+          <div class="flex flex-col sm:flex-row gap-4 mb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+              <input
+                type="text"
+                [(ngModel)]="searchSkillQuery"
+                (input)="filterSkills()"
+                placeholder="{{ 'searchSkills' | translate }}"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
             </div>
-
-            <div>
-              <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'currentSkills' | translate }}</h4>
-              <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-3 bg-gray-50 rounded-lg">
-                <span *ngFor="let skill of currentUser.skills" class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                  {{ skill }}
-                </span>
-              </div>
+            
+            <!-- Category Filter -->
+            <div class="sm:w-48">
+              <select
+                (change)="filterSkillsByCategory($any($event.target).value)"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">{{ 'allCategories' | translate }}</option>
+                <option *ngFor="let category of skillCategories" [value]="category">
+                  {{ category }}
+                </option>
+              </select>
             </div>
           </div>
+          
+          <!-- Selected Skills Count -->
+          <div class="text-sm text-gray-600 mb-4">
+            {{ 'selectedSkills' | translate }}: {{ selectedSkills.length }}
+          </div>
+        </div>
 
-          <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+        <!-- Selected Skills Section -->
+        <div *ngIf="selectedSkills.length > 0" class="mb-6">
+          <h4 class="text-sm font-medium text-gray-700 mb-3">{{ 'yourSelectedSkills' | translate }}</h4>
+          <div class="flex flex-wrap gap-2 p-4 bg-green-50 rounded-lg max-h-32 overflow-y-auto">
+            <span
+              *ngFor="let skill of selectedSkills"
+              class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full"
+            >
+              {{ skill.name }}
+              <button
+                type="button"
+                (click)="removeSkill(skill.id)"
+                class="ml-2 text-green-600 hover:text-green-800 text-xs"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- Available Skills Section -->
+        <div class="mb-6">
+          <h4 class="text-sm font-medium text-gray-700 mb-3">{{ 'availableSkills' | translate }}</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto border rounded-lg p-4">
             <button
+              *ngFor="let skill of filteredSkills"
               type="button"
-              (click)="closeSkillsModal()"
-              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              (click)="toggleSkill(skill)"
+              [class]="isSkillSelected(skill) 
+                ? 'bg-green-100 text-green-800 border-green-300' 
+                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'"
+              class="px-3 py-2 border rounded-lg text-sm text-left transition-colors duration-200"
             >
-              {{ 'cancel' | translate }}
+              <div class="font-medium">{{ skill.name }}</div>
+              <div class="text-xs opacity-75">{{ skill.category }}</div>
             </button>
-            <button
-              type="submit"
-              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ 'update' | translate }}
-            </button>
+            
+            <div *ngIf="filteredSkills.length === 0" class="col-span-full text-center py-8 text-gray-500">
+              {{ 'noSkillsFound' | translate }}
+            </div>
           </div>
-        </form>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end space-x-3 pt-6 border-t">
+          <button
+            type="button"
+            (click)="closeSkillsModal()"
+            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            {{ 'cancel' | translate }}
+          </button>
+          <button
+            type="button"
+            (click)="saveSkills()"
+            [disabled]="!isSkillsFormValid() || isLoading"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span *ngIf="isLoading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+            {{ 'update' | translate }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
