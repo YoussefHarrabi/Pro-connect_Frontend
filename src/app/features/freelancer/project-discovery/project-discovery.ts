@@ -4,9 +4,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged, interval } from 'rxjs';
 import { Project, ProjectCategory, ProjectFilters } from '../../../shared/models/project';
-import { ProjectMarketplaceService } from '../../../shared/services/project-marketplace.service';
-import { ApplicationService } from '../../../shared/services/application.service';
-import { Application } from '../../../shared/models/application';
+import { ProjectService, ProjectDto, ProjectCategory as ServiceProjectCategory } from '../../../shared/services/project.service';
+import { ApplicationService, ApplicationRequest, ApplicationDto, ApplicationStatus } from '../../../shared/services/application.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SharedNavbar, NavbarConfig } from '../../../shared/components/shared-navbar/shared-navbar';
 import { SharedFooter } from '../../../shared/components/shared-footer/shared-footer';
@@ -66,8 +65,8 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
   
   searchForm!: FormGroup;
   applicationForm!: FormGroup;
-  projects: Project[] = [];
-  paginatedProjects: Project[] = [];
+  projects: ProjectDto[] = [];
+  paginatedProjects: ProjectDto[] = [];
   savedProjectsCount = 0;
   isLoading = true;
   showFilters = false;
@@ -90,12 +89,13 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
   // Modal states
   showProjectModal = false;
   showApplicationModal = false;
-  selectedProject: Project | null = null;
+  selectedProject: ProjectDto | null = null;
   
   // Application form state
   isSubmittingApplication = false;
   uploadedFiles: File[] = [];
-  selectedPortfolioItems: string[] = [];
+  selectedAttachments: string[] = [];
+  myApplications: ApplicationDto[] = [];
   
   // Mock current user profile
   currentUser: TalentProfile = {
@@ -181,7 +181,7 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private projectService: ProjectMarketplaceService,
+    private projectService: ProjectService,
     private applicationService: ApplicationService,
     public translate: TranslateService
   ) {
@@ -194,6 +194,7 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
     this.loadInitialData();
     this.setupFormSubscriptions();
     this.loadSavedProjectsCount();
+    this.loadMyApplications(); // Load user's applications
     this.startBannerAutoSlide();
   }
 
@@ -227,13 +228,77 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
 
   loadInitialData(): void {
     console.log('Loading initial data...');
-    this.availableSkills = this.projectService.getAvailableSkills();
-    this.categories = this.projectService.getProjectCategories();
-    console.log('Categories loaded:', this.categories);
+    
+    // Load project categories
+    this.projectService.getProjectCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories.map(cat => ({
+          value: cat.value as any,
+          label: cat.label,
+          icon: this.getCategoryIcon(cat.value)
+        }));
+        console.log('Categories loaded:', this.categories);
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+      }
+    });
+    
+    // Set available skills (you might want to load these from an API too)
+    this.availableSkills = [
+      'JavaScript', 'TypeScript', 'Angular', 'React', 'Vue.js', 'Node.js',
+      'Python', 'Java', 'C#', 'PHP', 'Ruby', 'Go', 'Swift', 'Kotlin',
+      'HTML', 'CSS', 'SCSS', 'Bootstrap', 'Tailwind CSS',
+      'MongoDB', 'PostgreSQL', 'MySQL', 'Redis',
+      'AWS', 'Azure', 'Docker', 'Kubernetes'
+    ];
+    
     console.log('Skills loaded:', this.availableSkills.length);
     
     // Load all projects initially
-    this.searchProjects();
+    this.loadAllProjects();
+  }
+
+  loadAllProjects(): void {
+    console.log('Loading all projects...');
+    this.isLoading = true;
+    
+    this.projectService.getAllOpenProjects()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (projects: ProjectDto[]) => {
+          console.log('Projects received:', projects.length);
+          this.projects = projects;
+          this.sortProjects();
+          this.updatePagination();
+          this.isLoading = false;
+        },
+        error: (error: any) => {
+          console.error('Error loading projects:', error);
+          this.isLoading = false;
+        }
+      });
+  }
+
+  getCategoryIcon(category: string): string {
+    const iconMap: { [key: string]: string } = {
+      'WEB_DEVELOPMENT': '💻',
+      'MOBILE_DEVELOPMENT': '📱',
+      'DESKTOP_DEVELOPMENT': '🖥️',
+      'DESIGN_CREATIVE': '🎨',
+      'DATA_SCIENCE': '📊',
+      'MARKETING_SALES': '📈',
+      'WRITING_TRANSLATION': '✍️',
+      'BUSINESS_CONSULTING': '💼',
+      'ENGINEERING_ARCHITECTURE': '🏗️',
+      'LEGAL': '⚖️',
+      'FINANCE_ACCOUNTING': '💰',
+      'MUSIC_AUDIO': '🎵',
+      'VIDEO_ANIMATION': '🎬',
+      'PHOTOGRAPHY': '📸',
+      'OTHER': '📋'
+    };
+    return iconMap[category] || '📋';
   }
 
   setupFormSubscriptions(): void {
@@ -252,12 +317,9 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
   }
 
   loadSavedProjectsCount(): void {
-    this.projectService.savedProjects$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(savedIds => {
-        this.savedProjectsCount = savedIds.length;
-        console.log('Saved projects count:', this.savedProjectsCount);
-      });
+    // TODO: Implement saved projects functionality with ProjectService
+    this.savedProjectsCount = 0;
+    console.log('Saved projects count:', this.savedProjectsCount);
   }
 
   // Banner Methods
@@ -299,7 +361,7 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
   }
 
   // Modal Methods
-  openProjectModal(project: Project): void {
+  openProjectModal(project: ProjectDto): void {
     this.selectedProject = project;
     this.showProjectModal = true;
     document.body.style.overflow = 'hidden';
@@ -313,7 +375,7 @@ export class ProjectDiscovery implements OnInit, OnDestroy {
     console.log('Project modal closed');
   }
 
-openApplicationModal(project: Project): void {
+openApplicationModal(project: ProjectDto): void {
   console.log('Opening application modal for project:', project.title);
   
   // Close the project modal first but keep the project reference
@@ -332,8 +394,8 @@ openApplicationModal(project: Project): void {
   
   // Pre-fill form with project-related data
   this.applicationForm.patchValue({
-    proposedBudget: project.budget.min || '',
-    proposedTimeline: project.timeline.duration || '',
+    proposedBudget: project.budgetMin || '',
+    proposedTimeline: project.timeline || '',
     hourlyRate: this.currentUser.hourlyRate || 65
   });
   
@@ -357,7 +419,7 @@ closeApplicationModal(): void {
     this.applicationForm.reset();
   }
   this.uploadedFiles = [];
-  this.selectedPortfolioItems = [];
+  this.selectedAttachments = [];
   document.body.style.overflow = 'auto';
   document.body.classList.remove('modal-open');
 }
@@ -392,65 +454,48 @@ closeApplicationModal(): void {
     this.uploadedFiles.splice(index, 1);
   }
 
-  togglePortfolioItem(itemId: string): void {
-    const index = this.selectedPortfolioItems.indexOf(itemId);
-    if (index > -1) {
-      this.selectedPortfolioItems.splice(index, 1);
-    } else {
-      if (this.selectedPortfolioItems.length < 3) {
-        this.selectedPortfolioItems.push(itemId);
-      } else {
-        alert('Maximum 3 portfolio items can be selected.');
-      }
-    }
-  }
-
   submitApplication(): void {
     console.log('Submitting application...');
     if (this.applicationForm.valid && this.selectedProject) {
       this.isSubmittingApplication = true;
       
-      const portfolioItems = this.currentUser.portfolio?.filter(item => 
-        this.selectedPortfolioItems.includes(item.id)
-      ) || [];
-      
-      const applicationData: Partial<Application> = {
-        projectId: this.selectedProject.id,
-        talentId: this.currentUser.id,
-        talentType: this.currentUser.type,
-        talentName: this.currentUser.name,
-        talentAvatar: this.currentUser.avatar,
-        talentRating: this.currentUser.rating,
-        talentReviews: this.currentUser.reviews,
+      // Create application request using the new ApplicationRequest interface
+      const applicationRequest: ApplicationRequest = {
         coverLetter: this.applicationForm.value.coverLetter,
         proposedBudget: this.applicationForm.value.proposedBudget,
         proposedTimeline: this.applicationForm.value.proposedTimeline,
-        portfolioItems,
-        specialization: this.currentUser.specialization,
-        experienceLevel: this.currentUser.experienceLevel,
-        hourlyRate: this.applicationForm.value.hourlyRate || this.currentUser.hourlyRate,
-        skills: this.currentUser.skills,
-        companyName: this.currentUser.companyName,
-        teamSize: this.currentUser.teamSize
+        hourlyRate: this.applicationForm.value.hourlyRate || undefined,
+        additionalQuestions: this.applicationForm.value.additionalQuestions || undefined,
+        attachmentPaths: this.selectedAttachments.length > 0 ? this.selectedAttachments.join(',') : undefined
       };
 
-      this.applicationService.submitApplication(applicationData)
+      // Use the new applyToProject method
+      this.applicationService.applyToProject(this.selectedProject.id, applicationRequest)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (application) => {
+          next: (application: ApplicationDto) => {
+            console.log('Application submitted successfully:', application);
             this.isSubmittingApplication = false;
             this.closeApplicationModal();
+            
+            // Show success message
             alert('Application submitted successfully!');
             
-            // Update project proposals count
+            // Update project application count
             if (this.selectedProject) {
-              this.selectedProject.proposals += 1;
+              this.selectedProject.applicationCount += 1;
             }
+            
+            // Optionally refresh projects to get updated counts
+            this.loadAllProjects();
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error submitting application:', error);
             this.isSubmittingApplication = false;
-            alert('Error submitting application. Please try again.');
+            
+            // Show user-friendly error message
+            const errorMessage = error?.error?.message || error?.message || 'Failed to submit application. Please try again.';
+            alert(`Error: ${errorMessage}`);
           }
         });
     } else {
@@ -501,39 +546,44 @@ closeApplicationModal(): void {
     
     const formValue = this.searchForm.value;
     
-    // Clean the filters - only include non-empty values
-    const filters: ProjectFilters = {};
+    // Create filters object with correct types for ProjectService
+    const filters: {
+      keyword?: string;
+      category?: ServiceProjectCategory;
+      minBudget?: number;
+      maxBudget?: number;
+      isRemote?: boolean;
+      isUrgent?: boolean;
+      isFeatured?: boolean;
+    } = {};
     
     if (formValue.keyword && formValue.keyword.trim()) {
       filters.keyword = formValue.keyword.trim();
     }
     
     if (formValue.category && formValue.category !== '') {
-      filters.category = formValue.category;
-    }
-    
-    if (this.selectedSkills && this.selectedSkills.length > 0) {
-      filters.skills = [...this.selectedSkills];
-    }
-    
-    if (formValue.projectType && formValue.projectType !== '') {
-      filters.projectType = formValue.projectType;
+      // Convert the category string to the correct enum value
+      filters.category = formValue.category as ServiceProjectCategory;
     }
     
     if (formValue.budgetMin && formValue.budgetMin > 0) {
-      filters.budgetMin = formValue.budgetMin;
+      filters.minBudget = formValue.budgetMin;
     }
     
     if (formValue.budgetMax && formValue.budgetMax > 0) {
-      filters.budgetMax = formValue.budgetMax;
-    }
-    
-    if (formValue.complexity && formValue.complexity !== '') {
-      filters.complexity = formValue.complexity;
+      filters.maxBudget = formValue.budgetMax;
     }
     
     if (formValue.isRemote === true) {
       filters.isRemote = true;
+    }
+    
+    if (formValue.isUrgent === true) {
+      filters.isUrgent = true;
+    }
+    
+    if (formValue.isFeatured === true) {
+      filters.isFeatured = true;
     }
     
     console.log('Clean filters being applied:', filters);
@@ -541,14 +591,14 @@ closeApplicationModal(): void {
     this.projectService.searchProjects(filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (projects) => {
+        next: (projects: ProjectDto[]) => {
           console.log('Projects received:', projects.length);
           this.projects = projects;
           this.sortProjects();
           this.updatePagination();
           this.isLoading = false;
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading projects:', error);
           this.isLoading = false;
         }
@@ -558,20 +608,12 @@ closeApplicationModal(): void {
   loadSavedProjects(): void {
     console.log('Loading saved projects...');
     this.isLoading = true;
-    this.projectService.getSavedProjects()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (projects) => {
-          console.log('Saved projects received:', projects.length);
-          this.projects = projects;
-          this.updatePagination();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error loading saved projects:', error);
-          this.isLoading = false;
-        }
-      });
+    
+    // TODO: Implement saved projects functionality with ProjectService
+    // For now, show empty list
+    this.projects = [];
+    this.updatePagination();
+    this.isLoading = false;
   }
 
   switchView(view: 'all' | 'saved'): void {
@@ -626,16 +668,16 @@ closeApplicationModal(): void {
     console.log('Sorting projects by:', this.sortBy);
     switch (this.sortBy) {
       case 'newest':
-        this.projects.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+        this.projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       case 'budget-high':
-        this.projects.sort((a, b) => (b.budget.max || b.budget.min || 0) - (a.budget.max || a.budget.min || 0));
+        this.projects.sort((a, b) => (b.budgetMax || b.budgetMin || 0) - (a.budgetMax || a.budgetMin || 0));
         break;
       case 'budget-low':
-        this.projects.sort((a, b) => (a.budget.min || a.budget.max || 0) - (b.budget.min || b.budget.max || 0));
+        this.projects.sort((a, b) => (a.budgetMin || a.budgetMax || 0) - (b.budgetMin || b.budgetMax || 0));
         break;
       case 'proposals':
-        this.projects.sort((a, b) => a.proposals - b.proposals);
+        this.projects.sort((a, b) => a.applicationCount - b.applicationCount);
         break;
     }
     this.updatePagination();
@@ -646,18 +688,20 @@ closeApplicationModal(): void {
       event.stopPropagation();
     }
     console.log('Toggling save for project:', project.id);
+    // TODO: Implement save/unsave project functionality with ProjectService
     if (this.isProjectSaved(project.id)) {
-      this.projectService.removeSavedProject(project.id);
+      console.log('Would remove saved project:', project.id);
     } else {
-      this.projectService.saveProject(project.id);
+      console.log('Would save project:', project.id);
     }
   }
 
   isProjectSaved(projectId: string): boolean {
-    return this.projectService.isProjectSaved(projectId);
+    // TODO: Implement saved projects check with ProjectService
+    return false;
   }
 
-  viewProjectDetails(project: Project): void {
+  viewProjectDetails(project: ProjectDto): void {
     this.openProjectModal(project);
   }
 
@@ -743,5 +787,63 @@ closeApplicationModal(): void {
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     
     return new Intl.DateTimeFormat('en-US').format(date);
+  }
+
+  // File upload handling
+  onFileSelected(event: any): void {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Check file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+          continue;
+        }
+        
+        // Check file type
+        const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+          alert(`File ${file.name} has an unsupported format. Please use PDF, DOC, DOCX, JPG, or PNG.`);
+          continue;
+        }
+        
+        this.uploadedFiles.push(file);
+        this.selectedAttachments.push(file.name); // For now, use filename as path
+      }
+    }
+  }
+
+  removeAttachment(index: number): void {
+    this.uploadedFiles.splice(index, 1);
+    this.selectedAttachments.splice(index, 1);
+  }
+
+  // Check if user has already applied to this project
+  hasUserAppliedToProject(projectId: number): boolean {
+    return this.myApplications.some(app => app.projectId === projectId);
+  }
+
+  // Get application status for a project
+  getApplicationStatusForProject(projectId: number): ApplicationStatus | null {
+    const application = this.myApplications.find(app => app.projectId === projectId);
+    return application ? application.status : null;
+  }
+
+  // Load user's applications
+  loadMyApplications(): void {
+    this.applicationService.getMyApplications()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (applications: ApplicationDto[]) => {
+          this.myApplications = applications;
+          console.log('My applications loaded:', applications.length);
+        },
+        error: (error: any) => {
+          console.error('Error loading my applications:', error);
+          // Don't show error to user as this is background loading
+        }
+      });
   }
 }

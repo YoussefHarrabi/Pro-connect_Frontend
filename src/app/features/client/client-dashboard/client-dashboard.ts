@@ -1,15 +1,31 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-import { Application, Offer } from '../../../shared/models/application';
-import { Project } from '../../../shared/models/project';
-import { ApplicationService } from '../../../shared/services/application.service';
-import { ProjectMarketplaceService } from '../../../shared/services/project-marketplace.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SharedNavbar, NavbarConfig } from '../../../shared/components/shared-navbar/shared-navbar';
 import { SharedFooter } from '../../../shared/components/shared-footer/shared-footer';
+
+// ✅ Import ProjectService and related types
+import { 
+  ProjectService, 
+  ProjectDto, 
+  ProjectStats,
+  ProjectCategory,
+  ProjectStatus,
+  ProjectType,
+  ComplexityLevel,
+  ProjectCreateRequest,
+  ExperienceLevel
+} from '../../../shared/services/project.service';
+
+// ✅ Import ApplicationService and related types
+import { 
+  ApplicationService, 
+  ApplicationDto, 
+  ApplicationStatus 
+} from '../../../shared/services/application.service';
 
 // Define OngoingProject interface
 interface OngoingProject {
@@ -25,6 +41,22 @@ interface OngoingProject {
   progress: number; // 0-100
 }
 
+// Define Offer interface
+interface Offer {
+  id: string;
+  title: string;
+  description: string;
+  budget: {
+    amount: number;
+    type: 'fixed' | 'hourly';
+  };
+  timeline: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  sentDate: Date;
+  expiryDate: Date;
+  talentId: string;
+  talentName: string;
+}
 
 @Component({
   selector: 'app-client-dashboard',
@@ -44,22 +76,25 @@ interface OngoingProject {
 export class ClientDashboard implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
-  activeTab: 'projects' | 'applications' | 'offers' | 'ongoing' = 'applications';
+  activeTab: 'projects' | 'applications' | 'offers' | 'ongoing' = 'projects';
   
   navbarConfig: NavbarConfig = {
-    title: 'clientDashboard.header.title',
+    title: 'Client Dashboard',
     showLanguageToggle: true,
     showProfileLink: true,
     customButtons: [
       {
-        label: 'clientDashboard.header.postProject',
+        label: 'Post New Project',
         route: '/project-posting',
         class: 'px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200'
       }
     ]
   };
-  projects: Project[] = [];
-  applications: Application[] = [];
+
+  // ✅ Main data properties
+  projects: ProjectDto[] = [];
+  projectStats: ProjectStats | null = null;
+  applications: ApplicationDto[] = [];
   offers: Offer[] = [];
   ongoingProjects: OngoingProject[] = [];
   isLoading = false;
@@ -67,28 +102,42 @@ export class ClientDashboard implements OnInit, OnDestroy {
   // Modal states
   showApplicationModal = false;
   showOfferModal = false;
-  selectedApplication: Application | null = null;
-  selectedProject: Project | null = null;
+  showEditProjectModal = false;
+  selectedApplication: ApplicationDto | null = null;
+  selectedProject: ProjectDto | null = null;
   
-  // Offer form
+  // Forms
   offerForm!: FormGroup;
+  editProjectForm!: FormGroup;
   
   // Filters
   selectedProjectFilter = '';
   selectedStatusFilter = '';
+  selectedProjectStatusFilter = '';
+
+  // ✅ Expose enums for template
+  ProjectStatus = ProjectStatus;
+  ProjectCategory = ProjectCategory;
+  ApplicationStatus = ApplicationStatus;
+
+  // Menu state
+  showProjectMenu: number | null = null;
 
   Math = Math;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private projectService: ProjectService,
     private applicationService: ApplicationService,
-    private projectService: ProjectMarketplaceService,
     private translate: TranslateService
-  ) {}
+  ){
+  const currentUser = this.applicationService.getCurrentUsername();
+  console.log('🚀 ClientDashboard initialized for user:', currentUser || 'Not authenticated');
+}
 
   ngOnInit(): void {
-    this.initializeOfferForm();
+    this.initializeForms();
     this.loadData();
   }
 
@@ -97,7 +146,8 @@ export class ClientDashboard implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  initializeOfferForm(): void {
+  initializeForms(): void {
+    // Offer form
     this.offerForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(5)]],
       description: ['', [Validators.required, Validators.minLength(20)]],
@@ -107,110 +157,540 @@ export class ClientDashboard implements OnInit, OnDestroy {
       startDate: [''],
       terms: ['', [Validators.required, Validators.minLength(50)]]
     });
+
+    // ✅ Edit project form
+    this.editProjectForm = this.fb.group({
+      title: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(150)]],
+      description: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(2000)]],
+      category: ['', Validators.required],
+      skills: ['', Validators.required],
+      projectType: ['', Validators.required],
+      budgetMin: ['', [Validators.required, Validators.min(1)]],
+      budgetMax: ['', [Validators.required, Validators.min(1)]],
+      currency: ['EUR', Validators.required],
+      budgetNegotiable: [false],
+      timeline: ['', Validators.required],
+      complexity: ['', Validators.required],
+      preferredTalentType: ['', Validators.required],
+      experienceLevel: ['', Validators.required],
+      location: [''],
+      isRemote: [true],
+      isUrgent: [false],
+      isFeatured: [false],
+      deadline: ['']
+    });
   }
 
-  loadData(): void {
-    this.isLoading = true;
-    
-    // Load applications
-    this.applicationService.getAllApplications()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(applications => {
-        this.applications = applications;
+  // ✅ Load data using available endpoints only
+loadData(): void {
+  this.isLoading = true;
+  const currentUser = this.applicationService.getCurrentUsername();
+  console.log('📊 Loading client dashboard data for user:', currentUser);
+  
+  // ✅ Load ALL projects first, then filter for client's projects
+  this.loadAllProjects();
+  
+  // ✅ Load applications for client's projects
+  this.loadApplications();
+  
+  // Load mock data for now
+  this.loadMockOffers();
+  this.loadOngoingProjects();
+}
+
+  // ✅ Load all projects and filter for client's projects
+// ✅ Update loadAllProjects to use dynamic user
+private loadAllProjects(): void {
+  console.log('📋 Loading all projects and filtering for client...');
+  
+  this.projectService.getAllOpenProjects()
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (allProjects) => {
+        const currentUser = this.applicationService.getCurrentUsername();
+        
+        // ✅ Filter projects created by the current client (dynamic)
+        this.projects = allProjects.filter(project => 
+          project.clientUsername === currentUser
+        );
+        
+        console.log('✅ All projects loaded:', allProjects.length);
+        console.log('✅ Client projects filtered:', this.projects.length);
+        console.log('📋 Client projects:', this.projects);
+        
+        // Calculate stats from filtered projects
+        this.calculateProjectStats();
         this.isLoading = false;
-      });
+      },
+      error: (error) => {
+        console.error('❌ Error loading projects:', error);
+        this.isLoading = false;
+        // Fallback to mock data
+        this.loadMockProjects();
+        this.calculateProjectStats();
+      }
+    });
+}
 
-    // Load client's offers
-    this.applicationService.getOffersByClient('current-client-id')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(offers => {
-        this.offers = offers;
-      });
-
-    // Load projects (mock client projects)
-    this.projectService.searchProjects({})
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(projects => {
-        this.projects = projects.slice(0, 3); // Mock client's projects
-      });
-
-    // Load ongoing projects (mock data)
-    this.loadOngoingProjects();
+  // ✅ Calculate project statistics from loaded projects
+  private calculateProjectStats(): void {
+    this.projectStats = {
+      totalProjects: this.projects.length,
+      openProjects: this.projects.filter(p => p.status === ProjectStatus.OPEN).length,
+      inProgressProjects: this.projects.filter(p => p.status === ProjectStatus.IN_PROGRESS).length,
+      completedProjects: this.projects.filter(p => p.status === ProjectStatus.COMPLETED).length,
+      totalApplications: this.applications.length
+    };
+    
+    console.log('📊 Calculated project stats:', this.projectStats);
   }
 
-  loadOngoingProjects(): void {
-    // Mock ongoing projects data
-    this.ongoingProjects = [
+  // ✅ Load applications for client projects
+// ✅ NEW: Load applications using the new endpoint
+private loadApplications(): void {
+  console.log('📄 Loading applications for client projects...');
+  
+  this.applicationService.getApplicationsForMyProjects()
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (applications) => {
+        this.applications = applications;
+        console.log('✅ Client applications loaded:', applications.length);
+        
+        // Recalculate stats with real data
+        this.calculateProjectStats();
+      },
+      error: (error) => {
+        console.error('❌ Error loading client applications:', error);
+        // Fallback to mock data
+        this.loadMockApplications();
+      }
+    });
+}
+
+  // ✅ Mock data for testing (will be replaced when backend supports client-specific endpoints)
+  private loadMockProjects(): void {
+    this.projects = [
       {
-        id: 'ongoing-1',
+        id: 1,
         title: 'E-commerce Website Development',
-        description: 'Building a modern e-commerce platform with React and Node.js',
-        freelancerName: 'Sarah Johnson',
-        freelancerId: 'freelancer-001',
-        budget: 5000,
-        startDate: new Date('2024-01-15'),
-        deadline: new Date('2024-03-15'),
-        status: 'active',
-        progress: 65
+        description: 'Build a modern e-commerce platform with React and Node.js, including user authentication, product catalog, shopping cart, and payment integration.',
+        category: ProjectCategory.WEB_DEVELOPMENT,
+        skills: ['React', 'Node.js', 'MongoDB', 'Express', 'Payment Integration'],
+        projectType: ProjectType.FIXED,
+        budgetMin: 4000,
+        budgetMax: 6000,
+        currency: 'EUR',
+        budgetNegotiable: true,
+        timeline: '2-3 months',
+        complexity: ComplexityLevel.INTERMEDIATE,
+        preferredTalentType: 'BOTH' as any,
+        experienceLevel: ExperienceLevel.INTERMEDIATE,
+        location: 'Remote',
+        isRemote: true,
+        isUrgent: false,
+        isFeatured: true,
+        deadline: '2025-09-01',
+        status: ProjectStatus.OPEN,
+        clientUsername: 'currentUser',
+        assignedTalentUsername: undefined,
+        applicationCount: 8,
+        createdAt: '2025-01-25T10:30:00Z',
+        updatedAt: '2025-01-25T10:30:00Z'
       },
       {
-        id: 'ongoing-2',
+        id: 2,
         title: 'Mobile App UI/UX Design',
-        description: 'Complete mobile app design for iOS and Android platforms',
-        freelancerName: 'Alex Thompson',
-        freelancerId: 'freelancer-002',
-        budget: 3000,
-        startDate: new Date('2024-02-01'),
-        deadline: new Date('2024-04-01'),
-        status: 'active',
-        progress: 40
+        description: 'Design a modern and intuitive mobile app interface for a fitness tracking application.',
+        category: ProjectCategory.DESIGN_CREATIVE,
+        skills: ['UI/UX Design', 'Figma', 'Mobile Design', 'Prototyping'],
+        projectType: ProjectType.FIXED,
+        budgetMin: 2000,
+        budgetMax: 3500,
+        currency: 'EUR',
+        budgetNegotiable: false,
+        timeline: '1 month',
+        complexity: ComplexityLevel.INTERMEDIATE,
+        preferredTalentType: 'FREELANCER' as any,
+        experienceLevel: ExperienceLevel.EXPERT,
+        location: 'Remote',
+        isRemote: true,
+        isUrgent: true,
+        isFeatured: false,
+        deadline: '2025-08-15',
+        status: ProjectStatus.IN_PROGRESS,
+        clientUsername: 'currentUser',
+        assignedTalentUsername: 'designpro',
+        applicationCount: 5,
+        createdAt: '2025-01-20T14:15:00Z',
+        updatedAt: '2025-01-28T09:20:00Z'
       },
       {
-        id: 'ongoing-3',
-        title: 'WordPress Website Migration',
-        description: 'Migrating existing website to WordPress with custom theme',
-        freelancerName: 'Maria Garcia',
-        freelancerId: 'freelancer-003',
-        budget: 2000,
-        startDate: new Date('2024-01-20'),
-        deadline: new Date('2024-02-20'),
-        status: 'completed',
-        progress: 100
+        id: 3,
+        title: 'Content Writing for Blog',
+        description: 'Write high-quality blog posts about technology and business topics.',
+        category: ProjectCategory.WRITING_TRANSLATION,
+        skills: ['Content Writing', 'SEO', 'Research', 'Blog Writing'],
+        projectType: ProjectType.HOURLY,
+        budgetMin: 25,
+        budgetMax: 45,
+        currency: 'EUR',
+        budgetNegotiable: true,
+        timeline: '2-4 weeks',
+        complexity: ComplexityLevel.ENTRY,
+        preferredTalentType: 'FREELANCER' as any,
+        experienceLevel: ExperienceLevel.INTERMEDIATE,
+        location: 'Remote',
+        isRemote: true,
+        isUrgent: false,
+        isFeatured: false,
+        deadline: undefined,
+        status: ProjectStatus.COMPLETED,
+        clientUsername: 'currentUser',
+        assignedTalentUsername: 'writer123',
+        applicationCount: 12,
+        createdAt: '2025-01-10T08:45:00Z',
+        updatedAt: '2025-01-30T16:30:00Z'
+      }
+    ];
+    console.log('✅ Loaded mock projects for testing');
+  }
+
+  private loadMockApplications(): void {
+    this.applications = [
+      {
+        id: 1,
+        projectId: 1,
+        projectTitle: 'E-commerce Website Development',
+        applicantUsername: 'johndoe',
+        coverLetter: 'Dear Client,\n\nI am excited to apply for your e-commerce website development project. With over 5 years of experience in React and Node.js development, I have successfully delivered numerous e-commerce platforms.\n\nMy approach includes:\n- Detailed project analysis and planning\n- Modern responsive design\n- Secure payment integration\n- Comprehensive testing\n\nI am confident I can deliver a high-quality solution within your timeline and budget.\n\nBest regards,\nJohn Doe',
+        proposedBudget: 5200,
+        proposedTimeline: '10 weeks',
+        hourlyRate: 65,
+        additionalQuestions: 'I would like to know more about the specific payment gateways you prefer and any existing design guidelines.',
+        attachmentPaths: 'portfolio_showcase.pdf,ecommerce_examples.pdf',
+        selectedPortfolioItems: 'project1,project3',
+        status: ApplicationStatus.PENDING,
+        createdAt: '2025-01-28T10:30:00Z'
+      },
+      {
+        id: 2,
+        projectId: 1,
+        projectTitle: 'E-commerce Website Development',
+        applicantUsername: 'webdevpro',
+        coverLetter: 'Hello,\n\nI noticed your e-commerce project and I believe I am the perfect fit. I specialize in full-stack development with React and Node.js.\n\nKey highlights:\n- 7+ years of experience\n- Built 20+ e-commerce platforms\n- Expert in payment integrations (Stripe, PayPal)\n- Available to start immediately\n\nI can deliver a robust, scalable solution that will exceed your expectations.',
+        proposedBudget: 4800,
+        proposedTimeline: '8 weeks',
+        hourlyRate: 70,
+        additionalQuestions: 'Do you have any preference for the database (MongoDB vs PostgreSQL)?',
+        attachmentPaths: 'technical_portfolio.pdf',
+        selectedPortfolioItems: 'project2,project4,project5',
+        status: ApplicationStatus.UNDER_REVIEW,
+        createdAt: '2025-01-27T14:15:00Z'
+      },
+      {
+        id: 3,
+        projectId: 1,
+        projectTitle: 'E-commerce Website Development',
+        applicantUsername: 'reactmaster',
+        coverLetter: 'Hi there,\n\nI am a React specialist with extensive experience in e-commerce development. I have worked with major clients and delivered exceptional results.\n\nWhat I offer:\n- Clean, maintainable code\n- Fast loading times\n- Mobile-first approach\n- SEO optimization\n- 24/7 support during development\n\nLet\'s discuss your project in detail!',
+        proposedBudget: 5500,
+        proposedTimeline: '12 weeks',
+        hourlyRate: 60,
+        additionalQuestions: 'Would you need any specific analytics integration (Google Analytics, Facebook Pixel, etc.)?',
+        attachmentPaths: 'react_projects.pdf,testimonials.pdf',
+        selectedPortfolioItems: 'project6,project7',
+        status: ApplicationStatus.SHORTLISTED,
+        createdAt: '2025-01-26T09:20:00Z'
+      },
+      {
+        id: 4,
+        projectId: 2,
+        projectTitle: 'Mobile App UI/UX Design',
+        applicantUsername: 'uxdesigner',
+        coverLetter: 'Dear Hiring Manager,\n\nI am a UX/UI designer with 4 years of experience in mobile app design. I specialize in creating intuitive and engaging user experiences.\n\nMy design process:\n- User research and analysis\n- Wireframing and prototyping\n- Visual design and branding\n- Usability testing\n\nI would love to help bring your fitness app vision to life!',
+        proposedBudget: 2800,
+        proposedTimeline: '4 weeks',
+        hourlyRate: undefined,
+        additionalQuestions: 'Do you have any existing brand guidelines or color preferences for the app?',
+        attachmentPaths: 'design_portfolio.pdf',
+        selectedPortfolioItems: 'design1,design2',
+        status: ApplicationStatus.ACCEPTED,
+        createdAt: '2025-01-29T11:45:00Z'
+      },
+      {
+        id: 5,
+        projectId: 3,
+        projectTitle: 'Content Writing for Blog',
+        applicantUsername: 'contentwriter',
+        coverLetter: 'Hello,\n\nI am a professional content writer with expertise in technology and business topics. I have written for various tech blogs and publications.\n\nMy writing includes:\n- SEO-optimized content\n- Engaging and informative articles\n- Well-researched topics\n- Timely delivery\n\nI look forward to contributing to your blog!',
+        proposedBudget: 0,
+        proposedTimeline: '3 weeks',
+        hourlyRate: 35,
+        additionalQuestions: 'What is the preferred word count per article and posting frequency?',
+        attachmentPaths: 'writing_samples.pdf',
+        selectedPortfolioItems: 'article1,article2,article3',
+        status: ApplicationStatus.REJECTED,
+        createdAt: '2025-01-15T16:30:00Z'
+      }
+    ];
+    console.log('✅ Loaded mock applications for testing');
+  }
+
+  private loadMockOffers(): void {
+    this.offers = [
+      {
+        id: 'offer-1',
+        title: 'Website Development Offer',
+        description: 'Offer for building the e-commerce website with specific requirements.',
+        budget: { amount: 5000, type: 'fixed' },
+        timeline: '10 weeks',
+        status: 'pending',
+        sentDate: new Date('2025-01-30'),
+        expiryDate: new Date('2025-02-06'),
+        talentId: 'johndoe',
+        talentName: 'John Doe'
       }
     ];
   }
 
-  switchTab(tab: 'projects' | 'applications' | 'offers' | 'ongoing'): void {
-    this.activeTab = tab;
+  private loadOngoingProjects(): void {
+    this.ongoingProjects = [
+      {
+        id: 'ongoing-1',
+        title: 'Mobile App UI/UX Design',
+        description: 'Design a modern and intuitive mobile app interface for a fitness tracking application.',
+        freelancerName: 'UX Designer Pro',
+        freelancerId: 'uxdesigner',
+        budget: 2800,
+        startDate: new Date('2025-01-28'),
+        deadline: new Date('2025-02-25'),
+        status: 'active',
+        progress: 35
+      }
+    ];
   }
 
-  openApplicationModal(application: Application): void {
+  // ✅ Tab switching
+  switchTab(tab: 'projects' | 'applications' | 'offers' | 'ongoing'): void {
+    this.activeTab = tab;
+    console.log('📑 Switched to tab:', tab);
+  }
+
+  // ✅ Project management methods
+  editProject(project: ProjectDto): void {
+    this.selectedProject = project;
+    
+    // Pre-fill edit form
+    this.editProjectForm.patchValue({
+      title: project.title,
+      description: project.description,
+      category: project.category,
+      skills: project.skills ? project.skills.join(', ') : '',
+      projectType: project.projectType,
+      budgetMin: project.budgetMin,
+      budgetMax: project.budgetMax,
+      currency: project.currency || 'EUR',
+      budgetNegotiable: project.budgetNegotiable,
+      timeline: project.timeline,
+      complexity: project.complexity,
+      preferredTalentType: project.preferredTalentType,
+      experienceLevel: project.experienceLevel,
+      location: project.location,
+      isRemote: project.isRemote,
+      isUrgent: project.isUrgent,
+      isFeatured: project.isFeatured,
+      deadline: project.deadline
+    });
+    
+    this.showEditProjectModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeEditProjectModal(): void {
+    this.showEditProjectModal = false;
+    this.selectedProject = null;
+    this.editProjectForm.reset();
+    document.body.style.overflow = 'auto';
+  }
+
+  saveProjectChanges(): void {
+    if (this.editProjectForm.valid && this.selectedProject) {
+      this.isLoading = true;
+      
+      const formValue = this.editProjectForm.value;
+      
+      // Convert skills string to array
+      const skillsArray = formValue.skills 
+        ? formValue.skills.split(',').map((skill: string) => skill.trim()).filter((skill: string) => skill.length > 0)
+        : [];
+      
+      const updateRequest: ProjectCreateRequest = {
+        title: formValue.title,
+        description: formValue.description,
+        category: formValue.category,
+        skills: skillsArray,
+        projectType: formValue.projectType,
+        budgetMin: parseFloat(formValue.budgetMin),
+        budgetMax: parseFloat(formValue.budgetMax),
+        currency: formValue.currency,
+        budgetNegotiable: formValue.budgetNegotiable,
+        timeline: formValue.timeline,
+        complexity: formValue.complexity,
+        preferredTalentType: formValue.preferredTalentType,
+        experienceLevel: formValue.experienceLevel,
+        location: formValue.location,
+        isRemote: formValue.isRemote,
+        isUrgent: formValue.isUrgent,
+        isFeatured: formValue.isFeatured,
+        deadline: formValue.deadline
+      };
+
+      this.projectService.updateProject(this.selectedProject.id, updateRequest)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedProject) => {
+            // Update project in the list
+            const index = this.projects.findIndex(p => p.id === updatedProject.id);
+            if (index !== -1) {
+              this.projects[index] = updatedProject;
+            }
+            
+            this.closeEditProjectModal();
+            this.isLoading = false;
+            alert('Project updated successfully!');
+          },
+          error: (error) => {
+            console.error('❌ Error updating project:', error);
+            this.isLoading = false;
+            alert('Error updating project. Please try again.');
+          }
+        });
+    }
+  }
+
+  deleteProject(project: ProjectDto): void {
+    if (confirm(`Are you sure you want to delete "${project.title}"? This action cannot be undone.`)) {
+      this.projectService.deleteProject(project.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.projects = this.projects.filter(p => p.id !== project.id);
+            this.calculateProjectStats(); // Recalculate stats
+            alert('Project deleted successfully!');
+          },
+          error: (error) => {
+            console.error('❌ Error deleting project:', error);
+            alert('Error deleting project. Please try again.');
+          }
+        });
+    }
+  }
+
+  closeProject(project: ProjectDto): void {
+    if (confirm(`Are you sure you want to close "${project.title}"? No more applications will be accepted.`)) {
+      // TODO: Implement when backend supports closeProject endpoint
+      console.log('🔒 Closing project:', project.title);
+      
+      // Mock implementation for now
+      const index = this.projects.findIndex(p => p.id === project.id);
+      if (index !== -1) {
+        this.projects[index] = { ...project, status: ProjectStatus.CLOSED };
+        this.calculateProjectStats();
+        alert('Project closed successfully!');
+      }
+    }
+  }
+
+  reopenProject(project: ProjectDto): void {
+    // TODO: Implement when backend supports reopenProject endpoint
+    console.log('🔓 Reopening project:', project.title);
+    
+    // Mock implementation for now
+    const index = this.projects.findIndex(p => p.id === project.id);
+    if (index !== -1) {
+      this.projects[index] = { ...project, status: ProjectStatus.OPEN };
+      this.calculateProjectStats();
+      alert('Project reopened successfully!');
+    }
+  }
+
+  viewProjectApplications(project: ProjectDto): void {
+    // Navigate to applications with filter
+    this.activeTab = 'applications';
+    this.selectedProjectFilter = project.id.toString();
+    console.log('👀 Viewing applications for project:', project.title);
+  }
+
+  duplicateProject(project: ProjectDto): void {
+    // Navigate to project posting with pre-filled data
+    this.router.navigate(['/project-posting'], {
+      queryParams: {
+        duplicate: project.id
+      }
+    });
+  }
+
+  // ✅ Application management methods
+// ✅ Update updateApplicationStatus to use real API
+updateApplicationStatus(application: ApplicationDto, status: ApplicationStatus): void {
+  console.log(`📝 Updating application ${application.id} status to: ${status}`);
+  
+  this.applicationService.updateApplicationStatus(application.id, status)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (updatedApplication) => {
+        // Update local state with the response
+        const index = this.applications.findIndex(app => app.id === application.id);
+        if (index !== -1) {
+          this.applications[index] = updatedApplication;
+        }
+        
+        // Show success message
+        const statusLabel = this.applicationService.getStatusLabel(status);
+        alert(`Application marked as ${statusLabel.toLowerCase()}`);
+      },
+      error: (error) => {
+        console.error('❌ Error updating application status:', error);
+        alert('Error updating application status. Please try again.');
+      }
+    });
+}
+
+  openApplicationModal(application: ApplicationDto): void {
     this.selectedApplication = application;
-    this.selectedProject = this.projects.find(p => p.id === application.projectId) || null;
     this.showApplicationModal = true;
     document.body.style.overflow = 'hidden';
+    console.log('👀 Viewing application details:', application);
   }
 
   closeApplicationModal(): void {
     this.showApplicationModal = false;
     this.selectedApplication = null;
-    this.selectedProject = null;
     document.body.style.overflow = 'auto';
   }
 
-  openOfferModal(application: Application): void {
-    this.selectedApplication = application;
-    this.selectedProject = this.projects.find(p => p.id === application.projectId) || null;
-    
-    // Pre-fill form with project data
-    if (this.selectedProject) {
-      this.offerForm.patchValue({
-        title: `Offer for: ${this.selectedProject.title}`,
-        budgetAmount: application.proposedBudget || this.selectedProject.budget.min,
-        budgetType: this.selectedProject.budget.type,
-        timeline: application.proposedTimeline || this.selectedProject.timeline.duration
-      });
+  acceptApplication(application: ApplicationDto): void {
+    if (confirm(`Are you sure you want to accept the application from ${application.applicantUsername}? This will start the project.`)) {
+      this.updateApplicationStatus(application, ApplicationStatus.ACCEPTED);
+      this.closeApplicationModal();
+      console.log('✅ Application accepted!');
     }
+  }
+
+  // ✅ Offer management methods
+  openOfferModal(application: ApplicationDto): void {
+    this.selectedApplication = application;
+    
+    // Pre-fill offer form with application data
+    this.offerForm.patchValue({
+      title: `Offer for ${application.projectTitle}`,
+      description: `We would like to offer you the project: ${application.projectTitle}`,
+      budgetAmount: application.proposedBudget,
+      budgetType: application.hourlyRate ? 'hourly' : 'fixed',
+      timeline: application.proposedTimeline,
+      terms: 'Payment will be made in milestones as agreed. All work must be completed to satisfaction before final payment.'
+    });
     
     this.showOfferModal = true;
     document.body.style.overflow = 'hidden';
@@ -219,95 +699,89 @@ export class ClientDashboard implements OnInit, OnDestroy {
   closeOfferModal(): void {
     this.showOfferModal = false;
     this.selectedApplication = null;
-    this.selectedProject = null;
     this.offerForm.reset();
     document.body.style.overflow = 'auto';
   }
 
-  updateApplicationStatus(application: Application, status: Application['status']): void {
-    this.applicationService.updateApplicationStatus(application.id, status)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        application.status = status;
-        application.reviewedDate = new Date();
-      });
+  sendOffer(): void {
+    if (this.offerForm.valid && this.selectedApplication) {
+      const formValue = this.offerForm.value;
+      
+      // TODO: Call backend API to send offer
+      console.log('📤 Sending offer:', formValue);
+      
+      // Update application status to offered
+      this.updateApplicationStatus(this.selectedApplication, ApplicationStatus.OFFER_SENT);
+      
+      this.closeOfferModal();
+      alert('Offer sent successfully!');
+    }
   }
 
-  sendOffer(): void {
-    if (this.offerForm.valid && this.selectedApplication && this.selectedProject) {
-      this.isLoading = true;
-      
-      const offerData = {
-        projectId: this.selectedProject.id,
-        applicationId: this.selectedApplication.id,
-        clientId: 'current-client-id',
-        talentId: this.selectedApplication.talentId,
-        title: this.offerForm.value.title,
-        description: this.offerForm.value.description,
-        budget: {
-          amount: this.offerForm.value.budgetAmount,
-          type: this.offerForm.value.budgetType,
-          currency: 'EUR' as const
-        },
-        timeline: this.offerForm.value.timeline,
-        startDate: this.offerForm.value.startDate ? new Date(this.offerForm.value.startDate) : undefined,
-        terms: this.offerForm.value.terms
-      };
-
-      this.applicationService.createOffer(offerData)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (offer) => {
-            this.offers.push(offer);
-            this.selectedApplication!.status = 'offered';
-            this.closeOfferModal();
-            this.isLoading = false;
-            alert('Offer sent successfully!');
-          },
-          error: (error) => {
-            console.error('Error sending offer:', error);
-            this.isLoading = false;
-            alert('Error sending offer. Please try again.');
-          }
-        });
+  // ✅ Helper methods
+  getProjectStatusColor(status: ProjectStatus): string {
+    switch (status) {
+      case ProjectStatus.OPEN: return 'text-green-600 bg-green-100';
+      case ProjectStatus.IN_PROGRESS: return 'text-blue-600 bg-blue-100';
+      case ProjectStatus.COMPLETED: return 'text-purple-600 bg-purple-100';
+      case ProjectStatus.CLOSED: return 'text-gray-600 bg-gray-100';
+      case ProjectStatus.CANCELLED: return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
+  }
+
+  getProjectStatusLabel(status: ProjectStatus): string {
+    return this.projectService.getProjectStatusLabel(status);
+  }
+
+  getCategoryLabel(category: ProjectCategory): string {
+    return this.projectService.getCategoryLabel(category);
+  }
+
+  formatBudgetRange(project: ProjectDto): string {
+    return this.projectService.formatBudgetRange(project);
+  }
+
+  getStatusColor(status: ApplicationStatus): string {
+    return this.applicationService.getStatusColor(status);
+  }
+
+  canEditProject(project: ProjectDto): boolean {
+    return project.status === ProjectStatus.OPEN;
+  }
+
+  canCloseProject(project: ProjectDto): boolean {
+    return project.status === ProjectStatus.OPEN;
+  }
+
+  canReopenProject(project: ProjectDto): boolean {
+    return project.status === ProjectStatus.CLOSED;
+  }
+
+  formatDate(dateString: string): string {
+    return this.applicationService.formatDate(dateString);
   }
 
   getStarArray(rating: number): number[] {
     return Array(5).fill(0).map((_, i) => i < Math.floor(rating) ? 1 : 0);
   }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'reviewed': return 'text-blue-600 bg-blue-100';
-      case 'shortlisted': return 'text-purple-600 bg-purple-100';
-      case 'offered': return 'text-green-600 bg-green-100';
-      case 'rejected': return 'text-red-600 bg-red-100';
-      case 'hired': return 'text-green-800 bg-green-200';
-      case 'sent': return 'text-blue-600 bg-blue-100';
-      case 'accepted': return 'text-green-600 bg-green-100';
-      case 'declined': return 'text-red-600 bg-red-100';
-      case 'expired': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
+  // ✅ Computed properties
+  get filteredProjects(): ProjectDto[] {
+    let filtered = [...this.projects];
+    
+    if (this.selectedProjectStatusFilter) {
+      filtered = filtered.filter(project => project.status === this.selectedProjectStatusFilter);
     }
+    
+    return filtered;
   }
 
-  formatDate(date: Date): string {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  }
-
-  get filteredApplications(): Application[] {
+  get filteredApplications(): ApplicationDto[] {
     let filtered = [...this.applications];
     
     if (this.selectedProjectFilter) {
-      filtered = filtered.filter(app => app.projectId === this.selectedProjectFilter);
+      filtered = filtered.filter(app => app.projectId.toString() === this.selectedProjectFilter);
     }
     
     if (this.selectedStatusFilter) {
@@ -317,18 +791,19 @@ export class ClientDashboard implements OnInit, OnDestroy {
     return filtered;
   }
 
-  getProjectTitle(projectId: string): string {
+  getProjectTitle(projectId: number): string {
     const project = this.projects.find(p => p.id === projectId);
     return project ? project.title : 'Unknown Project';
   }
 
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.offerForm.get(fieldName);
+  // ✅ Form validation helpers
+  isFieldInvalid(fieldName: string, form: FormGroup = this.offerForm): boolean {
+    const field = form.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
-  getErrorMessage(fieldName: string): string {
-    const control = this.offerForm.get(fieldName);
+  getErrorMessage(fieldName: string, form: FormGroup = this.offerForm): string {
+    const control = form.get(fieldName);
     if (control?.hasError('required')) {
       return 'This field is required';
     }
@@ -342,45 +817,16 @@ export class ClientDashboard implements OnInit, OnDestroy {
     return '';
   }
 
-  // Navigate to workspace for ongoing project
+  // ✅ Navigation methods
   navigateToWorkspace(projectId: string): void {
     this.router.navigate(['/workspace', projectId]);
   }
 
-  // Accept application and move project to ongoing
-  acceptApplication(application: Application): void {
-    // Find the related project
-    const project = this.projects.find(p => p.id === application.projectId);
-    if (!project) return;
-
-    // Create ongoing project
-    const ongoingProject: OngoingProject = {
-      id: `ongoing-${Date.now()}`,
-      title: project.title,
-      description: project.description,
-      freelancerName: application.talentName,
-      freelancerId: application.talentId,
-      budget: application.proposedBudget || project.budget.min || 0,
-      startDate: new Date(),
-      deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days from now
-      status: 'active',
-      progress: 0
-    };
-
-    // Add to ongoing projects
-    this.ongoingProjects.unshift(ongoingProject);
-
-    // Update application status
-    application.status = 'offered';
-
-    // Close modal and show success message
-    this.closeApplicationModal();
-    
-    // You can add a toast notification here if you have a notification service
-    console.log(`Application accepted! Project "${project.title}" is now ongoing.`);
+  navigateToProjectPosting(): void {
+    this.router.navigate(['/project-posting']);
   }
 
-  // Get status color for ongoing projects
+  // ✅ Ongoing projects methods
   getOngoingProjectStatusColor(status: string): string {
     switch (status) {
       case 'active': return 'text-green-600 bg-green-100';
@@ -390,10 +836,23 @@ export class ClientDashboard implements OnInit, OnDestroy {
     }
   }
 
-  // Calculate days remaining for ongoing project
   getDaysRemaining(deadline: Date): number {
     const today = new Date();
     const timeDiff = deadline.getTime() - today.getTime();
     return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  }
+
+  // ✅ Menu toggle
+  toggleProjectMenu(projectId: number): void {
+    this.showProjectMenu = this.showProjectMenu === projectId ? null : projectId;
+  }
+
+  // ✅ Click outside handler
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.relative')) {
+      this.showProjectMenu = null;
+    }
   }
 }

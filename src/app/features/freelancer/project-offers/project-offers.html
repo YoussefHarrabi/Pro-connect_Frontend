@@ -4,6 +4,12 @@
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">My Applications</h1>
+      <p class="mt-2 text-gray-600">Track and manage your project applications</p>
+    </div>
+    
     <!-- Tab Navigation -->
     <div class="bg-white rounded-xl shadow-sm border mb-8">
       <nav class="flex space-x-8 px-6" aria-label="Tabs">
@@ -13,15 +19,31 @@
             ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
         >
-          {{ 'projectOffers.tabs.pending' | translate }} ({{ getPendingCount() }})
+          Pending Applications ({{ getPendingCount() }})
         </button>
         <button
-          (click)="switchTab('responded')"
-          [class]="activeTab === 'responded' 
+          (click)="switchTab('under_review')"
+          [class]="activeTab === 'under_review' 
             ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
         >
-          {{ 'projectOffers.tabs.responded' | translate }} ({{ getRespondedCount() }})
+          Under Review ({{ getUnderReviewCount() }})
+        </button>
+        <button
+          (click)="switchTab('accepted')"
+          [class]="activeTab === 'accepted' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          Accepted ({{ getAcceptedCount() }})
+        </button>
+        <button
+          (click)="switchTab('rejected')"
+          [class]="activeTab === 'rejected' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+        >
+          Rejected ({{ getRejectedCount() }})
         </button>
         <button
           (click)="switchTab('all')"
@@ -29,7 +51,7 @@
             ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
         >
-          {{ 'projectOffers.tabs.all' | translate }} ({{ offers.length }})
+          All Applications ({{ applications.length }})
         </button>
       </nav>
     </div>
@@ -39,172 +61,144 @@
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
     </div>
 
-    <!-- Offers List -->
+    <!-- Applications List -->
     <div *ngIf="!isLoading" class="space-y-6">
       <!-- Empty State -->
-      <div *ngIf="filteredOffers.length === 0" class="text-center py-12">
+      <div *ngIf="filteredApplications.length === 0" class="text-center py-12">
         <div class="mx-auto h-12 w-12 text-gray-400">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-4 4L9 5" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">{{ 'projectOffers.empty.title' | translate }}</h3>
-        <p class="mt-1 text-sm text-gray-500">{{ 'projectOffers.empty.description' | translate }}</p>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No Applications Found</h3>
+        <p class="mt-1 text-sm text-gray-500">You haven't applied to any projects yet.</p>
         <div class="mt-6">
           <a routerLink="/project-discovery" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
-            {{ 'projectOffers.empty.browseProjects' | translate }}
+            Browse Projects
           </a>
         </div>
       </div>
 
-      <!-- Offer Cards -->
-      <div *ngFor="let offer of filteredOffers" class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden">
-        <!-- Expired Banner -->
-        <div *ngIf="isOfferExpired(offer)" class="bg-red-500 text-white text-center py-2 text-sm font-medium">
-          {{ 'projectOffers.status.expired' | translate }}
+      <!-- Application Cards -->
+      <div *ngFor="let application of filteredApplications" class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden">
+        
+        <!-- Status Banner -->
+        <div *ngIf="application.status === 'ACCEPTED'" class="bg-green-500 text-white text-center py-2 text-sm font-medium">
+          🎉 Congratulations! Your application was accepted
         </div>
-
-        <!-- Urgency Banner -->
-        <div *ngIf="offer.status === 'pending' && getDaysUntilExpiry(offer) <= 2 && !isOfferExpired(offer)" class="bg-orange-500 text-white text-center py-2 text-sm font-medium">
-          {{ 'projectOffers.urgency.expiresIn' | translate }}: {{ getDaysUntilExpiry(offer) }} {{ 'projectOffers.urgency.days' | translate }}
+        <div *ngIf="application.status === 'REJECTED'" class="bg-red-500 text-white text-center py-2 text-sm font-medium">
+          Application was not selected
+        </div>
+        <div *ngIf="application.status === 'UNDER_REVIEW'" class="bg-blue-500 text-white text-center py-2 text-sm font-medium">
+          Your application is under review
         </div>
 
         <div class="p-6">
-          <!-- Offer Header -->
+          <!-- Application Header -->
           <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
               <div class="flex items-center space-x-3 mb-2">
-                <h3 class="text-xl font-semibold text-gray-900">{{ offer.project.title }}</h3>
-                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusColor(offer.status)">
-                  {{ 'projectOffers.status.' + offer.status | translate }}
+                <h3 class="text-xl font-semibold text-gray-900">{{ application.projectTitle }}</h3>
+                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusColor(application.status)">
+                  {{ getStatusLabel(application.status) }}
                 </span>
               </div>
               
-              <!-- Client Info -->
-              <div class="flex items-center space-x-2 mb-2">
-                <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
-                  [alt]="offer.clientName"
-                  class="w-8 h-8 rounded-full object-cover"
-                />
-                <div>
-                  <button 
-                    (click)="viewClientProfile(offer.clientId)"
-                    class="text-sm font-medium text-primary-600 hover:text-primary-800"
-                  >
-                    {{ offer.clientName }}
-                  </button>
-                  <div class="flex items-center space-x-1">
-                    <div class="flex">
-                      <svg *ngFor="let star of getStarArray(offer.clientRating)" 
-                           class="w-3 h-3 text-yellow-400 fill-current">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                    </div>
-                    <span class="text-xs text-gray-500">{{ offer.clientRating }} ({{ offer.clientReviews }} {{ 'projectOffers.reviews' | translate }})</span>
-                  </div>
-                </div>
+              <!-- Application Info -->
+              <div class="flex items-center space-x-4 text-sm text-gray-600">
+                <span>Applied: {{ formatDate(application.createdAt) }}</span>
+                <span>Project ID: #{{ application.projectId }}</span>
               </div>
             </div>
             
             <div class="text-right">
-              <p class="text-sm text-gray-500">{{ 'projectOffers.sentOn' | translate }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ formatDate(offer.sentDate) }}</p>
-              <p *ngIf="offer.status === 'pending'" class="text-xs text-red-600 mt-1">
-                {{ 'projectOffers.expiresOn' | translate }}: {{ formatDate(offer.expiresAt) }}
-              </p>
+              <div class="flex flex-col space-y-1">
+                <span class="text-lg font-bold text-primary-600">€{{ application.proposedBudget | number }}</span>
+                <span class="text-sm text-gray-500">Your Proposal</span>
+                <span *ngIf="application.hourlyRate" class="text-sm text-gray-500">€{{ application.hourlyRate }}/hr</span>
+              </div>
             </div>
           </div>
 
-          <!-- Project Description -->
-          <p class="text-gray-700 mb-4">{{ offer.project.description }}</p>
-
-          <!-- Skills -->
+          <!-- Cover Letter Preview -->
           <div class="mb-4">
-            <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'projectOffers.requiredSkills' | translate }}</h4>
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Your Cover Letter</h4>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <p class="text-gray-700 text-sm line-clamp-3">{{ application.coverLetter }}</p>
+              <button 
+                (click)="expandCoverLetter(application)"
+                class="text-primary-600 hover:text-primary-800 text-xs mt-2"
+              >
+                Read full cover letter →
+              </button>
+            </div>
+          </div>
+
+          <!-- Application Details -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p class="text-sm text-gray-500">Proposed Budget</p>
+              <p class="font-semibold text-gray-900">€{{ application.proposedBudget | number }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Timeline</p>
+              <p class="font-semibold text-gray-900">{{ application.proposedTimeline }}</p>
+            </div>
+            <div *ngIf="application.hourlyRate">
+              <p class="text-sm text-gray-500">Hourly Rate</p>
+              <p class="font-semibold text-gray-900">€{{ application.hourlyRate }}/hr</p>
+            </div>
+          </div>
+
+          <!-- Additional Questions -->
+          <div *ngIf="application.additionalQuestions" class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Additional Information</h4>
+            <p class="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">{{ application.additionalQuestions }}</p>
+          </div>
+
+          <!-- Attachments -->
+          <div *ngIf="application.attachmentPaths" class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Attachments</h4>
             <div class="flex flex-wrap gap-2">
-              <span *ngFor="let skill of offer.project.skills" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                {{ skill }}
+              <span *ngFor="let attachment of getAttachmentList(application.attachmentPaths)" 
+                    class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium flex items-center">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                {{ attachment }}
               </span>
             </div>
           </div>
 
-          <!-- Client Message -->
-          <div class="bg-gray-50 rounded-lg p-4 mb-4">
-            <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'projectOffers.clientMessage' | translate }}</h4>
-            <p class="text-gray-700 text-sm">{{ offer.message }}</p>
-          </div>
-
-          <!-- Project Details -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-            <div>
-              <p class="text-sm text-gray-500">{{ 'projectOffers.budget' | translate }}</p>
-              <p class="font-semibold text-gray-900">
-                <span *ngIf="offer.proposedBudget">€{{ offer.proposedBudget | number }}</span>
-                <span *ngIf="!offer.proposedBudget && offer.project.budget.type === 'fixed'">
-                  €{{ offer.project.budget.min | number }} - €{{ offer.project.budget.max | number }}
-                </span>
-                <span *ngIf="!offer.proposedBudget && offer.project.budget.type === 'hourly'">
-                  €{{ offer.project.budget.min | number }}-{{ offer.project.budget.max | number }}/hr
-                </span>
-              </p>
+          <!-- Application Stats -->
+          <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+              <span>Application #{{ application.id }}</span>
+              <span *ngIf="getRelativeTime(application.createdAt)">{{ getRelativeTime(application.createdAt) }}</span>
             </div>
-            <div>
-              <p class="text-sm text-gray-500">{{ 'projectOffers.timeline' | translate }}</p>
-              <p class="font-semibold text-gray-900">
-                <span *ngIf="offer.proposedDeadline">{{ formatDateString(offer.proposedDeadline) }}</span>
-                <span *ngIf="!offer.proposedDeadline">{{ offer.project.timeline.duration }}</span>
-              </p>
-            </div>
-            <div>
-              <p class="text-sm text-gray-500">{{ 'projectOffers.projectType' | translate }}</p>
-              <p class="font-semibold text-gray-900">{{ 'projectOffers.types.' + offer.project.projectType | translate }}</p>
-            </div>
-          </div>
-
-          <!-- Terms (if any) -->
-          <div *ngIf="offer.terms" class="mb-4">
-            <h4 class="text-sm font-medium text-gray-700 mb-2">{{ 'projectOffers.terms' | translate }}</h4>
-            <p class="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">{{ offer.terms }}</p>
-          </div>
-
-          <!-- Response Message (for responded offers) -->
-          <div *ngIf="offer.status !== 'pending' && offer.responseDate" class="mb-4 p-4 rounded-lg"
-               [class]="offer.status === 'accepted' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
-            <div class="flex items-center justify-between mb-2">
-              <h4 class="text-sm font-medium" [class]="offer.status === 'accepted' ? 'text-green-800' : 'text-red-800'">
-                {{ 'projectOffers.yourResponse' | translate }}
-              </h4>
-              <span class="text-xs text-gray-500">{{ formatDate(offer.responseDate) }}</span>
-            </div>
-            <p class="text-sm" [class]="offer.status === 'accepted' ? 'text-green-700' : 'text-red-700'">
-              {{ offer.status === 'accepted' ? 'projectOffers.acceptedMessage' : 'projectOffers.declinedMessage' | translate }}
-            </p>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex flex-wrap gap-3">
-            <button
-              (click)="viewProjectDetails(offer.project)"
-              class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-            >
-              {{ 'projectOffers.actions.viewProject' | translate }}
-            </button>
-
-            <!-- Actions for pending offers -->
-            <div *ngIf="offer.status === 'pending' && !isOfferExpired(offer)" class="flex gap-3">
+            
+            <!-- Actions -->
+            <div class="flex space-x-3">
               <button
-                (click)="openResponseModal(offer, 'accept')"
-                class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+                (click)="viewProjectDetails(application.projectId)"
+                class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
               >
-                {{ 'projectOffers.actions.accept' | translate }}
+                View Project
               </button>
               
               <button
-                (click)="openResponseModal(offer, 'decline')"
+                (click)="viewFullApplication(application)"
+                class="px-4 py-2 text-sm bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors duration-200"
+              >
+                View Details
+              </button>
+
+              <button
+                *ngIf="canWithdrawApplication(application)"
+                (click)="withdrawApplication(application)"
                 class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
               >
-                {{ 'projectOffers.actions.decline' | translate }}
+                Withdraw
               </button>
             </div>
           </div>
@@ -213,18 +207,15 @@
     </div>
   </div>
 
-  <!-- Response Modal -->
-  <div *ngIf="showResponseModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+  <!-- Application Details Modal -->
+  <div *ngIf="showDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
       <div class="p-6">
         <!-- Modal Header -->
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-semibold text-gray-900">
-            <span *ngIf="responseType === 'accept'">{{ 'projectOffers.modal.acceptTitle' | translate }}</span>
-            <span *ngIf="responseType === 'decline'">{{ 'projectOffers.modal.declineTitle' | translate }}</span>
-          </h2>
+          <h2 class="text-xl font-semibold text-gray-900">Application Details</h2>
           <button 
-            (click)="closeResponseModal()" 
+            (click)="closeDetailsModal()" 
             class="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,94 +224,90 @@
           </button>
         </div>
 
-        <!-- Project Info -->
-        <div *ngIf="selectedOffer" class="bg-gray-50 rounded-lg p-4 mb-6">
-          <h3 class="font-medium text-gray-900 mb-2">{{ selectedOffer.project.title }}</h3>
-          <p class="text-sm text-gray-600 mb-2">{{ 'projectOffers.modal.client' | translate }}: {{ selectedOffer.clientName }}</p>
-          <p class="text-sm text-gray-600">
-            {{ 'projectOffers.modal.budget' | translate }}: 
-            <span *ngIf="selectedOffer.proposedBudget">€{{ selectedOffer.proposedBudget | number }}</span>
-            <span *ngIf="!selectedOffer.proposedBudget">€{{ selectedOffer.project.budget.min | number }} - €{{ selectedOffer.project.budget.max | number }}</span>
-          </p>
+        <!-- Application Content -->
+        <div *ngIf="selectedApplication" class="space-y-6">
+          <!-- Project Info -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-2">{{ selectedApplication.projectTitle }}</h3>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-500">Project ID:</span>
+                <span class="ml-2 font-medium">#{{ selectedApplication.projectId }}</span>
+              </div>
+              <div>
+                <span class="text-gray-500">Status:</span>
+                <span [class]="'ml-2 px-2 py-1 rounded text-xs font-medium ' + getStatusColor(selectedApplication.status)">
+                  {{ getStatusLabel(selectedApplication.status) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Full Cover Letter -->
+          <div>
+            <h4 class="text-lg font-medium text-gray-900 mb-3">Cover Letter</h4>
+            <div class="bg-white border rounded-lg p-4">
+              <p class="text-gray-700 whitespace-pre-wrap">{{ selectedApplication.coverLetter }}</p>
+            </div>
+          </div>
+
+          <!-- Application Details -->
+          <div>
+            <h4 class="text-lg font-medium text-gray-900 mb-3">Proposal Details</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-white border rounded-lg p-4">
+                <h5 class="text-sm font-medium text-gray-500 mb-1">Proposed Budget</h5>
+                <p class="text-xl font-bold text-primary-600">€{{ selectedApplication.proposedBudget | number }}</p>
+              </div>
+              <div class="bg-white border rounded-lg p-4">
+                <h5 class="text-sm font-medium text-gray-500 mb-1">Timeline</h5>
+                <p class="text-lg font-semibold text-gray-900">{{ selectedApplication.proposedTimeline }}</p>
+              </div>
+              <div *ngIf="selectedApplication.hourlyRate" class="bg-white border rounded-lg p-4">
+                <h5 class="text-sm font-medium text-gray-500 mb-1">Hourly Rate</h5>
+                <p class="text-lg font-semibold text-gray-900">€{{ selectedApplication.hourlyRate }}/hr</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Information -->
+          <div *ngIf="selectedApplication.additionalQuestions">
+            <h4 class="text-lg font-medium text-gray-900 mb-3">Additional Information</h4>
+            <div class="bg-white border rounded-lg p-4">
+              <p class="text-gray-700 whitespace-pre-wrap">{{ selectedApplication.additionalQuestions }}</p>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div>
+            <h4 class="text-lg font-medium text-gray-900 mb-3">Application Timeline</h4>
+            <div class="bg-white border rounded-lg p-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 bg-primary-600 rounded-full"></div>
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Application Submitted</p>
+                  <p class="text-xs text-gray-500">{{ formatDate(selectedApplication.createdAt) }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Response Form -->
-        <form [formGroup]="responseForm" (ngSubmit)="submitResponse()">
-          <!-- Response Message -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              {{ 'projectOffers.modal.responseMessage' | translate }} *
-            </label>
-            <textarea
-              formControlName="message"
-              rows="4"
-              class="input-field"
-              [placeholder]="'projectOffers.modal.messagePlaceholder' | translate"
-              [class.border-red-500]="isFieldInvalid('message')"
-            ></textarea>
-            <div *ngIf="isFieldInvalid('message')" class="mt-1 text-sm text-red-600">
-              {{ getErrorMessage('message') }}
-            </div>
-          </div>
-
-          <!-- Counter Offer Fields (for acceptance) -->
-          <div *ngIf="responseType === 'accept'" class="space-y-4 mb-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  {{ 'projectOffers.modal.counterBudget' | translate }}
-                </label>
-                <input
-                  type="number"
-                  formControlName="counterBudget"
-                  class="input-field"
-                  [placeholder]="'projectOffers.modal.counterBudgetPlaceholder' | translate"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  {{ 'projectOffers.modal.counterDeadline' | translate }}
-                </label>
-                <input
-                  type="date"
-                  formControlName="counterDeadline"
-                  class="input-field"
-                />
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                {{ 'projectOffers.modal.additionalTerms' | translate }}
-              </label>
-              <textarea
-                formControlName="additionalTerms"
-                rows="2"
-                class="input-field"
-                [placeholder]="'projectOffers.modal.additionalTermsPlaceholder' | translate"
-              ></textarea>
-            </div>
-          </div>
-
-          <!-- Form Actions -->
-          <div class="flex justify-end space-x-3">
-            <button
-              type="button"
-              (click)="closeResponseModal()"
-              class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-            >
-              {{ 'projectOffers.modal.cancel' | translate }}
-            </button>
-            <button
-              type="submit"
-              [disabled]="!responseForm.valid"
-              class="px-4 py-2 text-sm text-white rounded-lg transition-colors duration-200"
-              [class]="responseType === 'accept' ? 'bg-green-600 hover:bg-green-700 disabled:bg-green-300' : 'bg-red-600 hover:bg-red-700 disabled:bg-red-300'"
-            >
-              <span *ngIf="responseType === 'accept'">{{ 'projectOffers.modal.acceptProject' | translate }}</span>
-              <span *ngIf="responseType === 'decline'">{{ 'projectOffers.modal.declineProject' | translate }}</span>
-            </button>
-          </div>
-        </form>
+        <!-- Modal Actions -->
+        <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+          <button
+            (click)="closeDetailsModal()"
+            class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+          >
+            Close
+          </button>
+          <button
+            (click)="selectedApplication && viewProjectDetails(selectedApplication.projectId)"
+            class="px-4 py-2 text-sm text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors duration-200"
+          >
+            View Project
+          </button>
+        </div>
       </div>
     </div>
   </div>

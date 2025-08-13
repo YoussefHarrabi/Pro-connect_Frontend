@@ -4,28 +4,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Project } from '../../../shared/models/project';
+import { ApplicationService, ApplicationDto, ApplicationStatus } from '../../../shared/services/application.service';
 import { SharedNavbar, NavbarConfig } from '../../../shared/components/shared-navbar/shared-navbar';
 import { SharedFooter } from '../../../shared/components/shared-footer/shared-footer';
-
-export interface ProjectOffer {
-  id: string;
-  projectId: string;
-  project: Project;
-  clientId: string;
-  clientName: string;
-  clientRating: number;
-  clientReviews: number;
-  talentId: string;
-  message: string;
-  proposedBudget?: number;
-  proposedDeadline?: string;
-  status: 'pending' | 'accepted' | 'declined' | 'expired';
-  sentDate: Date;
-  responseDate?: Date;
-  expiresAt: Date;
-  terms?: string;
-}
 
 @Component({
   selector: 'app-project-offers',
@@ -43,45 +24,42 @@ export interface ProjectOffer {
 export class ProjectOffers implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  offers: ProjectOffer[] = [];
-  filteredOffers: ProjectOffer[] = [];
+  applications: ApplicationDto[] = [];
+  filteredApplications: ApplicationDto[] = [];
   isLoading = false;
-  activeTab: 'pending' | 'responded' | 'all' = 'pending';
+  activeTab: 'pending' | 'under_review' | 'accepted' | 'rejected' | 'all' = 'pending';
   
   navbarConfig: NavbarConfig = {
-    title: 'projectOffers.header.title',
+    title: 'My Applications',
     showLanguageToggle: true,
     showProfileLink: true,
     customButtons: [
       {
-        label: 'projectOffers.header.browseProjects',
+        label: 'Browse Projects',
         route: '/project-discovery',
         class: 'px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200'
       }
     ]
   };
   
-  // Response Modal
-  showResponseModal = false;
-  selectedOffer: ProjectOffer | null = null;
-  responseForm!: FormGroup;
-  responseType: 'accept' | 'decline' | null = null;
+  // Details Modal
+  showDetailsModal = false;
+  selectedApplication: ApplicationDto | null = null;
 
   Math = Math;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private applicationService: ApplicationService
   ) {
-    // Set default language for translation service
     this.translate.setDefaultLang('en');
     this.translate.use('en');
   }
 
   ngOnInit(): void {
-    this.initializeResponseForm();
-    this.loadOffers();
+    this.loadApplications();
   }
 
   ngOnDestroy(): void {
@@ -89,296 +67,199 @@ export class ProjectOffers implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  initializeResponseForm(): void {
-    this.responseForm = this.fb.group({
-      message: ['', [Validators.required, Validators.minLength(20)]],
-      counterBudget: [''],
-      counterDeadline: [''],
-      additionalTerms: ['']
-    });
-  }
-
-  loadOffers(): void {
+  loadApplications(): void {
     this.isLoading = true;
     
-    // Mock data - in real app, this would come from a service
-    this.offers = [
-      {
-        id: 'offer1',
-        projectId: '1',
-        project: {
-          id: '1',
-          title: 'E-commerce Website Development',
-          description: 'Build a modern e-commerce platform with React and Node.js. The website should include user authentication, product catalog, shopping cart, payment integration, and admin dashboard.',
-          clientId: 'client1',
-          clientName: 'John Doe',
-          clientRating: 4.8,
-          clientReviews: 25,
-          category: 'web-development' as any,
-          skills: ['React', 'Node.js', 'MongoDB', 'Payment Integration'],
-          budget: { type: 'fixed', min: 4000, max: 6000, currency: 'EUR', isNegotiable: true },
-          timeline: { duration: '2-3 months', isFlexible: true },
-          complexity: 'intermediate',
-          proposals: 12,
-          status: 'open' as any,
-          postedDate: new Date(2025, 0, 15),
-          isRemote: true,
-          isUrgent: false,
-          isFeatured: true,
-          projectType: 'fixed',
-          preferredTalentType: 'both',
-          experienceLevel: 'intermediate'
+    this.applicationService.getMyApplications()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (applications) => {
+          console.log('✅ Loaded applications:', applications);
+          this.applications = applications;
+          this.filterApplications();
+          this.isLoading = false;
         },
-        clientId: 'client1',
-        clientName: 'John Doe',
-        clientRating: 4.8,
-        clientReviews: 25,
-        talentId: 'talent1',
-        message: 'Hi! I reviewed your profile and I\'m impressed with your React and Node.js experience. I would like to invite you to work on my e-commerce project. The timeline is flexible and I\'m open to discussing the budget.',
-        proposedBudget: 5000,
-        proposedDeadline: '2025-04-01',
-        status: 'pending',
-        sentDate: new Date(2025, 0, 28),
-        expiresAt: new Date(2025, 1, 4), // 7 days from sent date
-        terms: 'Payment will be made in milestones: 30% upfront, 40% after backend completion, 30% after final delivery.'
+        error: (error) => {
+          console.error('❌ Error loading applications:', error);
+          this.isLoading = false;
+          // Show mock data for testing
+          this.loadMockApplications();
+        }
+      });
+  }
+
+  // Mock data for testing
+  loadMockApplications(): void {
+    this.applications = [
+      {
+        id: 1,
+        projectId: 1,
+        projectTitle: 'E-commerce Website Development',
+        applicantUsername: 'iskander25',
+        coverLetter: 'Dear Client,\n\nI am excited to apply for your e-commerce website development project. With over 5 years of experience in React and Node.js development, I have successfully delivered numerous e-commerce platforms with features including user authentication, payment integration, and admin dashboards.\n\nMy approach would be to start with a detailed project analysis, followed by creating wireframes and then developing the platform using modern technologies. I ensure clean, maintainable code and comprehensive testing.\n\nI am confident I can deliver a high-quality solution within your timeline and budget.\n\nBest regards,\nIskander',
+        proposedBudget: 4500,
+        proposedTimeline: '2.5 months',
+        hourlyRate: 65,
+        additionalQuestions: 'I would like to know more about the specific payment gateways you prefer and any existing design guidelines.',
+        attachmentPaths: 'portfolio_showcase.pdf,previous_ecommerce_examples.pdf',
+        selectedPortfolioItems: undefined,
+        status: ApplicationStatus.UNDER_REVIEW,
+        createdAt: '2025-01-28T10:30:00Z'
       },
       {
-        id: 'offer2',
-        projectId: '2',
-        project: {
-          id: '2',
-          title: 'Mobile App UI/UX Design',
-          description: 'Design a modern and intuitive mobile app interface for a fitness tracking application. Should include onboarding, workout tracking, progress charts, and social features.',
-          clientId: 'client2',
-          clientName: 'Sarah Wilson',
-          clientRating: 4.9,
-          clientReviews: 18,
-          category: 'design' as any,
-          skills: ['UI/UX Design', 'Figma', 'Mobile Design', 'Prototyping'],
-          budget: { type: 'fixed', min: 2000, max: 3500, currency: 'EUR', isNegotiable: true },
-          timeline: { duration: '1 month', isFlexible: false },
-          complexity: 'intermediate',
-          proposals: 8,
-          status: 'open' as any,
-          postedDate: new Date(2025, 0, 20),
-          isRemote: true,
-          isUrgent: true,
-          isFeatured: false,
-          projectType: 'fixed',
-          preferredTalentType: 'freelancer',
-          experienceLevel: 'intermediate'
-        },
-        clientId: 'client2',
-        clientName: 'Sarah Wilson',
-        clientRating: 4.9,
-        clientReviews: 18,
-        talentId: 'talent1',
-        message: 'Hello! Your design portfolio caught my attention, especially your mobile app designs. I have an urgent project that needs to be completed within a month. Are you available?',
-        proposedBudget: 2800,
-        proposedDeadline: '2025-03-01',
-        status: 'pending',
-        sentDate: new Date(2025, 0, 29),
-        expiresAt: new Date(2025, 1, 5),
-        terms: 'Fast turnaround required. Payment: 50% upfront, 50% on delivery.'
+        id: 2,
+        projectId: 2,
+        projectTitle: 'Mobile App UI/UX Design',
+        applicantUsername: 'iskander25',
+        coverLetter: 'Hello,\n\nI noticed your urgent mobile app design project and I am available to start immediately. While my primary expertise is in full-stack development, I have strong design skills and experience with Figma and modern UI/UX principles.\n\nI can deliver the complete design within 3 weeks, including all screens, prototypes, and design assets ready for development.\n\nLooking forward to working with you!',
+        proposedBudget: 2200,
+        proposedTimeline: '3 weeks',
+        hourlyRate: undefined,
+        additionalQuestions: 'Do you have any existing brand guidelines or color preferences?',
+        attachmentPaths: 'design_portfolio.pdf',
+        selectedPortfolioItems: undefined,
+        status: ApplicationStatus.REJECTED,
+        createdAt: '2025-01-29T14:15:00Z'
       },
       {
-        id: 'offer3',
-        projectId: '3',
-        project: {
-          id: '3',
-          title: 'API Development for SaaS Platform',
-          description: 'Develop RESTful APIs for a SaaS platform with authentication, data management, and third-party integrations.',
-          clientId: 'client3',
-          clientName: 'Tech Innovations Inc.',
-          clientRating: 4.7,
-          clientReviews: 42,
-          category: 'backend-development' as any,
-          skills: ['Node.js', 'Express', 'PostgreSQL', 'JWT', 'API Design'],
-          budget: { type: 'hourly', min: 45, max: 65, currency: 'EUR', isNegotiable: false },
-          timeline: { duration: '6 weeks', isFlexible: true },
-          complexity: 'expert',
-          proposals: 15,
-          status: 'open' as any,
-          postedDate: new Date(2025, 0, 10),
-          isRemote: true,
-          isUrgent: false,
-          isFeatured: true,
-          projectType: 'hourly',
-          preferredTalentType: 'both',
-          experienceLevel: 'expert'
-        },
-        clientId: 'client3',
-        clientName: 'Tech Innovations Inc.',
-        clientRating: 4.7,
-        clientReviews: 42,
-        talentId: 'talent1',
-        message: 'We need an experienced backend developer for our SaaS platform. Your expertise in Node.js and API development makes you a perfect fit. This is a long-term opportunity.',
-        status: 'accepted',
-        sentDate: new Date(2025, 0, 25),
-        responseDate: new Date(2025, 0, 26),
-        expiresAt: new Date(2025, 1, 1)
+        id: 3,
+        projectId: 3,
+        projectTitle: 'API Development for SaaS Platform',
+        applicantUsername: 'iskander25',
+        coverLetter: 'Dear Tech Innovations Inc.,\n\nI am thrilled to apply for your API development project. This aligns perfectly with my expertise in Node.js, Express, and PostgreSQL. I have developed numerous RESTful APIs for SaaS platforms, including authentication systems, data management, and third-party integrations.\n\nMy experience includes:\n- JWT authentication and authorization\n- Database design and optimization\n- API documentation with Swagger\n- Automated testing and deployment\n\nI am excited about the long-term opportunity and can start immediately.\n\nBest regards,\nIskander',
+        proposedBudget: 0, // Hourly project
+        proposedTimeline: '6 weeks',
+        hourlyRate: 58,
+        additionalQuestions: 'I would appreciate more details about the specific third-party integrations required and the expected API load.',
+        attachmentPaths: 'api_documentation_samples.pdf,saas_project_references.pdf',
+        selectedPortfolioItems: 'project1,project3',
+        status: ApplicationStatus.ACCEPTED,
+        createdAt: '2025-01-25T09:20:00Z'
+      },
+      {
+        id: 4,
+        projectId: 4,
+        projectTitle: 'WordPress Plugin Development',
+        applicantUsername: 'iskander25',
+        coverLetter: 'Hi there,\n\nI am interested in developing your WordPress plugin. Although WordPress is not my primary specialty, I have experience with PHP and can deliver a functional plugin within your requirements.\n\nI would need some additional time to familiarize myself with WordPress best practices, but I am confident in delivering a quality solution.',
+        proposedBudget: 800,
+        proposedTimeline: '2 weeks',
+        hourlyRate: undefined,
+        additionalQuestions: undefined,
+        attachmentPaths: undefined,
+        selectedPortfolioItems: undefined,
+        status: ApplicationStatus.PENDING,
+        createdAt: '2025-01-30T16:45:00Z'
       }
     ];
-
-    this.filterOffers();
-    this.isLoading = false;
+    
+    this.filterApplications();
   }
 
-  switchTab(tab: 'pending' | 'responded' | 'all'): void {
+  switchTab(tab: 'pending' | 'under_review' | 'accepted' | 'rejected' | 'all'): void {
     this.activeTab = tab;
-    this.filterOffers();
+    this.filterApplications();
   }
 
-  filterOffers(): void {
+  filterApplications(): void {
     switch (this.activeTab) {
       case 'pending':
-        this.filteredOffers = this.offers.filter(offer => offer.status === 'pending');
+        this.filteredApplications = this.applications.filter(app => app.status === ApplicationStatus.PENDING);
         break;
-      case 'responded':
-        this.filteredOffers = this.offers.filter(offer => 
-          offer.status === 'accepted' || offer.status === 'declined'
+      case 'under_review':
+        this.filteredApplications = this.applications.filter(app => 
+          app.status === ApplicationStatus.UNDER_REVIEW || app.status === ApplicationStatus.SHORTLISTED
         );
         break;
+      case 'accepted':
+        this.filteredApplications = this.applications.filter(app => app.status === ApplicationStatus.ACCEPTED);
+        break;
+      case 'rejected':
+        this.filteredApplications = this.applications.filter(app => app.status === ApplicationStatus.REJECTED);
+        break;
       case 'all':
-        this.filteredOffers = [...this.offers];
+        this.filteredApplications = [...this.applications];
         break;
     }
   }
 
-  openResponseModal(offer: ProjectOffer, type: 'accept' | 'decline'): void {
-    this.selectedOffer = offer;
-    this.responseType = type;
-    this.showResponseModal = true;
-    this.responseForm.reset();
-    
-    // Pre-fill form for acceptance
-    if (type === 'accept') {
-      this.responseForm.patchValue({
-        message: `Thank you for choosing me for this project. I'm excited to work on "${offer.project.title}" and deliver high-quality results within the specified timeline.`
-      });
-    } else {
-      this.responseForm.patchValue({
-        message: `Thank you for considering me for this project. Unfortunately, I won't be able to take on this project at this time.`
-      });
-    }
-
+  viewFullApplication(application: ApplicationDto): void {
+    this.selectedApplication = application;
+    this.showDetailsModal = true;
     document.body.style.overflow = 'hidden';
   }
 
-  closeResponseModal(): void {
-    this.showResponseModal = false;
-    this.selectedOffer = null;
-    this.responseType = null;
-    this.responseForm.reset();
+  closeDetailsModal(): void {
+    this.showDetailsModal = false;
+    this.selectedApplication = null;
     document.body.style.overflow = 'auto';
   }
 
-  submitResponse(): void {
-    if (this.responseForm.valid && this.selectedOffer && this.responseType) {
-      const formValue = this.responseForm.value;
-      
-      // Update offer status
-      this.selectedOffer.status = this.responseType === 'accept' ? 'accepted' : 'declined';
-      this.selectedOffer.responseDate = new Date();
+  expandCoverLetter(application: ApplicationDto): void {
+    this.viewFullApplication(application);
+  }
 
-      // In real app, this would make an API call
-      const responseData = {
-        offerId: this.selectedOffer.id,
-        status: this.selectedOffer.status,
-        message: formValue.message,
-        counterBudget: formValue.counterBudget,
-        counterDeadline: formValue.counterDeadline,
-        additionalTerms: formValue.additionalTerms
-      };
+  viewProjectDetails(projectId: number): void {
+    this.router.navigate(['/project-details', projectId]);
+  }
 
-      console.log('Submitting response:', responseData);
-
-      // Show success message
-      const messageKey = this.responseType === 'accept' ? 
-        'projectOffers.response.acceptSuccess' : 
-        'projectOffers.response.declineSuccess';
-      
-      alert(this.translate.instant(messageKey, { 
-        projectTitle: this.selectedOffer.project.title 
-      }));
-
-      this.closeResponseModal();
-      this.filterOffers();
+  withdrawApplication(application: ApplicationDto): void {
+    if (confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
+      this.applicationService.withdrawApplication(application.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('✅ Application withdrawn successfully');
+            this.loadApplications(); // Refresh the list
+          },
+          error: (error) => {
+            console.error('❌ Error withdrawing application:', error);
+            alert('Failed to withdraw application. Please try again.');
+          }
+        });
     }
   }
 
-  viewProjectDetails(project: Project): void {
-    this.router.navigate(['/project-details', project.id]);
+  canWithdrawApplication(application: ApplicationDto): boolean {
+    return this.applicationService.canWithdraw(application.status);
   }
 
-  viewClientProfile(clientId: string): void {
-    this.router.navigate(['/client-profile', clientId]);
+  getStatusColor(status: ApplicationStatus): string {
+    return this.applicationService.getStatusColor(status);
   }
 
-  getStatusColor(status: ProjectOffer['status']): string {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'declined':
-        return 'bg-red-100 text-red-800';
-      case 'expired':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  getStatusLabel(status: ApplicationStatus): string {
+    return this.applicationService.getStatusLabel(status);
   }
 
-  isOfferExpired(offer: ProjectOffer): boolean {
-    if (!offer || !offer.expiresAt) return false;
-    return new Date() > offer.expiresAt && offer.status === 'pending';
+  formatDate(dateString: string): string {
+    return this.applicationService.formatDate(dateString);
   }
 
-  getDaysUntilExpiry(offer: ProjectOffer): number {
-    if (!offer || !offer.expiresAt) return 0;
-    const now = new Date();
-    const diffMs = offer.expiresAt.getTime() - now.getTime();
-    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  getRelativeTime(dateString: string): string {
+    return this.applicationService.getRelativeTime(dateString);
   }
 
-  formatDate(date: Date): string {
-    if (!date) return '';
-    return new Intl.DateTimeFormat(this.translate.currentLang === 'fr' ? 'fr-FR' : 'en-US').format(date);
-  }
-
-  formatDateString(dateString: string): string {
-    if (!dateString) return '';
-    return this.formatDate(new Date(dateString));
-  }
-
-  getStarArray(rating: number): number[] {
-    if (!rating || rating < 0) return Array(5).fill(0);
-    return Array(5).fill(0).map((_, i) => i < Math.floor(rating) ? 1 : 0);
-  }
-
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.responseForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched));
-  }
-
-  getErrorMessage(fieldName: string): string {
-    const control = this.responseForm.get(fieldName);
-    if (control?.hasError('required')) {
-      return this.translate.instant('projectOffers.validation.required');
-    }
-    if (control?.hasError('minlength')) {
-      const minLength = control.errors?.['minlength']?.requiredLength;
-      return this.translate.instant('projectOffers.validation.minLength', { minLength });
-    }
-    return '';
+  getAttachmentList(attachmentPaths: string | null): string[] {
+    if (!attachmentPaths) return [];
+    return attachmentPaths.split(',').map(path => path.trim()).filter(path => path.length > 0);
   }
 
   getPendingCount(): number {
-    return this.offers ? this.offers.filter(offer => offer.status === 'pending').length : 0;
+    return this.applications.filter(app => app.status === ApplicationStatus.PENDING).length;
   }
 
-  getRespondedCount(): number {
-    return this.offers ? this.offers.filter(offer => offer.status === 'accepted' || offer.status === 'declined').length : 0;
+  getUnderReviewCount(): number {
+    return this.applications.filter(app => 
+      app.status === ApplicationStatus.UNDER_REVIEW || app.status === ApplicationStatus.SHORTLISTED
+    ).length;
+  }
+
+  getAcceptedCount(): number {
+    return this.applications.filter(app => app.status === ApplicationStatus.ACCEPTED).length;
+  }
+
+  getRejectedCount(): number {
+    return this.applications.filter(app => app.status === ApplicationStatus.REJECTED).length;
   }
 }

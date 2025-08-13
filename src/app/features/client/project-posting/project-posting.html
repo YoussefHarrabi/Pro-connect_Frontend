@@ -138,9 +138,10 @@
               How do you want to pay? *
             </label>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Fixed Price Option -->
               <div
-                (click)="selectProjectType('fixed')"
-                [class]="projectForm.get('projectType')?.value === 'fixed'
+                (click)="selectProjectType(ProjectType.FIXED)"
+                [class]="projectForm.get('projectType')?.value === ProjectType.FIXED
                   ? 'border-2 border-primary-500 bg-primary-50'
                   : 'border-2 border-gray-200 hover:border-primary-300'"
                 class="cursor-pointer rounded-xl p-6 transition-all duration-200"
@@ -154,9 +155,10 @@
                 </div>
               </div>
 
+              <!-- Hourly Rate Option -->
               <div
-                (click)="selectProjectType('hourly')"
-                [class]="projectForm.get('projectType')?.value === 'hourly'
+                (click)="selectProjectType(ProjectType.HOURLY)"
+                [class]="projectForm.get('projectType')?.value === ProjectType.HOURLY
                   ? 'border-2 border-primary-500 bg-primary-50'
                   : 'border-2 border-gray-200 hover:border-primary-300'"
                 class="cursor-pointer rounded-xl p-6 transition-all duration-200"
@@ -170,12 +172,15 @@
                 </div>
               </div>
             </div>
+            <div *ngIf="isFieldInvalid('projectType')" class="text-red-500 text-sm mt-1">
+              Please select a payment type
+            </div>
           </div>
 
           <!-- Budget Range -->
           <div *ngIf="projectForm.get('projectType')?.value">
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              {{ projectForm.get('projectType')?.value === 'fixed' ? 'Budget Range' : 'Hourly Budget Range' }} *
+              {{ projectForm.get('projectType')?.value === ProjectType.FIXED ? 'Budget Range' : 'Hourly Budget Range' }} *
             </label>
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -183,17 +188,27 @@
                   type="number"
                   formControlName="budgetMin"
                   placeholder="Minimum budget (€)"
-                  class="input-field"
+                  [class]="isFieldInvalid('budgetMin') ? 'input-field input-error' : 'input-field'"
                 />
+                <div *ngIf="isFieldInvalid('budgetMin')" class="text-red-500 text-sm mt-1">
+                  {{ getErrorMessage('budgetMin') }}
+                </div>
               </div>
               <div>
                 <input
                   type="number"
                   formControlName="budgetMax"
                   placeholder="Maximum budget (€)"
-                  class="input-field"
+                  [class]="isFieldInvalid('budgetMax') ? 'input-field input-error' : 'input-field'"
                 />
+                <div *ngIf="isFieldInvalid('budgetMax')" class="text-red-500 text-sm mt-1">
+                  {{ getErrorMessage('budgetMax') }}
+                </div>
               </div>
+            </div>
+            <!-- Budget Range Validation -->
+            <div *ngIf="projectForm.get('budgetMin')?.value && projectForm.get('budgetMax')?.value && !validateBudgetRange()" class="text-red-500 text-sm mt-1">
+              Minimum budget cannot be greater than maximum budget
             </div>
             <div class="flex items-center mt-2">
               <input
@@ -213,7 +228,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               How long will this project take? *
             </label>
-            <select formControlName="timeline" class="input-field">
+            <select formControlName="timeline" [class]="isFieldInvalid('timeline') ? 'input-field input-error' : 'input-field'">
               <option value="">Select timeline</option>
               <option value="less-than-1-week">Less than 1 week</option>
               <option value="1-2-weeks">1-2 weeks</option>
@@ -222,6 +237,9 @@
               <option value="2-4-months">2-4 months</option>
               <option value="more-than-4-months">More than 4 months</option>
             </select>
+            <div *ngIf="isFieldInvalid('timeline')" class="text-red-500 text-sm mt-1">
+              {{ getErrorMessage('timeline') }}
+            </div>
           </div>
 
           <!-- Complexity Level -->
@@ -257,11 +275,11 @@
             <label class="block text-sm font-medium text-gray-700 mb-3">
               What type of talent do you prefer?
             </label>
-            <div class="flex space-x-4">
+            <div class="flex flex-wrap space-x-6">
               <label class="flex items-center">
                 <input
                   type="radio"
-                  value="freelancer"
+                  [value]="TalentType.FREELANCER"
                   formControlName="preferredTalentType"
                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
                 />
@@ -270,7 +288,7 @@
               <label class="flex items-center">
                 <input
                   type="radio"
-                  value="agency"
+                  [value]="TalentType.AGENCY"
                   formControlName="preferredTalentType"
                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
                 />
@@ -279,7 +297,7 @@
               <label class="flex items-center">
                 <input
                   type="radio"
-                  value="both"
+                  [value]="TalentType.BOTH"
                   formControlName="preferredTalentType"
                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
                 />
@@ -294,9 +312,9 @@
               Minimum experience level required
             </label>
             <select formControlName="experienceLevel" class="input-field">
-              <option value="entry">Entry Level</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="expert">Expert</option>
+              <option [value]="ExperienceLevel.ENTRY">Entry Level</option>
+              <option [value]="ExperienceLevel.INTERMEDIATE">Intermediate</option>
+              <option [value]="ExperienceLevel.EXPERT">Expert</option>
             </select>
           </div>
 
@@ -363,6 +381,7 @@
               class="input-field"
               [min]="today"
             />
+            <p class="text-xs text-gray-500 mt-1">Leave empty if no specific deadline</p>
           </div>
         </div>
       </div>
@@ -375,43 +394,62 @@
           (click)="previousStep()"
           class="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
         >
+          <i class="fas fa-arrow-left mr-2"></i>
           Previous
         </button>
         <div *ngIf="currentStep === 1"></div>
 
         <div class="flex space-x-3">
+          <!-- Next Button -->
           <button
             *ngIf="currentStep < totalSteps"
             type="button"
             (click)="nextStep()"
-            class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+            [disabled]="!isCurrentStepValid()"
+            class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
             Next
+            <i class="fas fa-arrow-right ml-2"></i>
           </button>
 
+          <!-- Save Draft Button -->
           <button
             *ngIf="currentStep === totalSteps"
             type="button"
             (click)="saveDraft()"
-            [disabled]="isLoading"
-            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            [disabled]="isLoading || selectedSkills.length === 0"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
+            <i *ngIf="!isLoading" class="fas fa-save mr-2"></i>
+            <i *ngIf="isLoading" class="fas fa-spinner fa-spin mr-2"></i>
             Save Draft
           </button>
 
+          <!-- Publish Button -->
           <button
             *ngIf="currentStep === totalSteps"
             type="submit"
-            [disabled]="isLoading || projectForm.invalid"
-            class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors duration-200 flex items-center"
+            [disabled]="isLoading || projectForm.invalid || selectedSkills.length === 0 || !validateBudgetRange()"
+            class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
           >
             <svg *ngIf="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
+            <i *ngIf="!isLoading" class="fas fa-rocket mr-2"></i>
             Publish Project
           </button>
         </div>
+      </div>
+
+      <!-- Form Summary (for debugging - remove in production) -->
+      <div *ngIf="false" class="mt-8 p-4 bg-gray-100 rounded-lg">
+        <h3 class="text-lg font-semibold mb-2">Form Debug Info:</h3>
+        <p><strong>Form Valid:</strong> {{ projectForm.valid }}</p>
+        <p><strong>Selected Skills:</strong> {{ selectedSkills.length }}</p>
+        <p><strong>Budget Valid:</strong> {{ validateBudgetRange() }}</p>
+        <p><strong>Current Step Valid:</strong> {{ isCurrentStepValid() }}</p>
+        <pre class="text-xs mt-2">{{ projectForm.value | json }}</pre>
       </div>
     </form>
   </div>

@@ -16,51 +16,100 @@
 
         <!-- Main Navigation Links -->
         <nav class="hidden md:flex items-center space-x-2">
-          <!-- Find Work Dropdown -->
-          <div class="relative group">
-            <button class="flex items-center text-white hover:text-blue-200 px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md hover:bg-blue-700/50">
-              Find Work
-              <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
-              <div class="py-1">
-                <a routerLink="/project-discovery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
-                  Browse Jobs
-                </a>
-                <a routerLink="/project-offers" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
-                  My Proposals
-                </a>
-                <a routerLink="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
-                  Profile
-                </a>
+          <!-- Find Work Dropdown (Show for Freelancers and Service Companies) -->
+          <div class="relative group" *ngIf="currentUser$ | async as user; else defaultNav">
+            <div *ngIf="user.role === 'ROLE_FREELANCER' || user.role === 'ROLE_SERVICE_COMPANY'">
+              <button class="flex items-center text-white hover:text-blue-200 px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md hover:bg-blue-700/50">
+                Find Work
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
+                <div class="py-1">
+                  <a routerLink="/project-discovery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Browse Jobs
+                  </a>
+                  <a routerLink="/project-offers" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    My Proposals
+                  </a>
+                  <a routerLink="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Profile
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Find Talent Dropdown (Show for Clients) -->
+            <div *ngIf="user.role === 'ROLE_CLIENT'">
+              <button class="flex items-center text-white hover:text-blue-200 px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md hover:bg-blue-700/50">
+                Find Talent
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
+                <div class="py-1">
+                  <a routerLink="/talent-discovery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Browse Talent
+                  </a>
+                  <a routerLink="/project-posting" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Post a Job
+                  </a>
+                  <a routerLink="/client-dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Manage Projects
+                  </a>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Find Talent Dropdown -->
-          <div class="relative group">
-            <button class="flex items-center text-white hover:text-blue-200 px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md hover:bg-blue-700/50">
-              Find Talent
-              <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
-              <div class="py-1">
-                <a routerLink="/talent-discovery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
-                  Browse Talent
-                </a>
-                <a routerLink="/project-posting" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
-                  Post a Job
-                </a>
-                <a routerLink="/client-dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
-                  Manage Projects
-                </a>
+          <!-- Default navigation for users not logged in -->
+          <ng-template #defaultNav>
+            <div class="relative group">
+              <button class="flex items-center text-white hover:text-blue-200 px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md hover:bg-blue-700/50">
+                Find Work
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
+                <div class="py-1">
+                  <a routerLink="/project-discovery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Browse Jobs
+                  </a>
+                  <a routerLink="/project-offers" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    My Proposals
+                  </a>
+                  <a routerLink="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Profile
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
+
+            <div class="relative group">
+              <button class="flex items-center text-white hover:text-blue-200 px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md hover:bg-blue-700/50">
+                Find Talent
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <div class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
+                <div class="py-1">
+                  <a routerLink="/talent-discovery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Browse Talent
+                  </a>
+                  <a routerLink="/project-posting" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Post a Job
+                  </a>
+                  <a routerLink="/client-dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+                    Manage Projects
+                  </a>
+                </div>
+              </div>
+            </div>
+          </ng-template>
 
           <!-- Why Pro-Connect -->
           <a routerLink="/about" class="text-white hover:text-blue-200 px-4 py-2 text-sm font-medium transition-all duration-200 rounded-md hover:bg-blue-700/50">
@@ -164,7 +213,8 @@
                 </svg>
                 View Profile
               </a>
-              <a routerLink="/client-dashboard" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
+              <a routerLink="/client-dashboard" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150" 
+                 *ngIf="(currentUser$ | async)?.role === 'ROLE_CLIENT'">
                 <svg class="mr-3 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H9z"></path>
                 </svg>
@@ -177,13 +227,6 @@
                 Active Workspace
               </a>
               <div class="border-t border-gray-200 my-2"></div>
-              <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
-                <svg class="mr-3 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                Settings
-              </a>
               <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
                 <svg class="mr-3 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -217,11 +260,32 @@
   <!-- Mobile Navigation Menu (hidden by default) -->
   <div class="md:hidden bg-slate-800 border-t border-slate-700">
     <div class="px-4 py-3 space-y-2">
-      <a routerLink="/project-discovery" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Browse Jobs</a>
-      <a routerLink="/talent-discovery" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Browse Talent</a>
-      <a routerLink="/project-posting" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Post a Job</a>
-      <a routerLink="/client-dashboard" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Dashboard</a>
-      <a routerLink="/profile" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Profile</a>
+      <!-- Show role-specific navigation for mobile -->
+      <ng-container *ngIf="currentUser$ | async as user; else mobileDefaultNav">
+        <!-- For Freelancers and Service Companies -->
+        <ng-container *ngIf="user.role === 'ROLE_FREELANCER' || user.role === 'ROLE_SERVICE_COMPANY'">
+          <a routerLink="/project-discovery" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Browse Jobs</a>
+          <a routerLink="/project-offers" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">My Proposals</a>
+          <a routerLink="/profile" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Profile</a>
+        </ng-container>
+        
+        <!-- For Clients -->
+        <ng-container *ngIf="user.role === 'ROLE_CLIENT'">
+          <a routerLink="/talent-discovery" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Browse Talent</a>
+          <a routerLink="/project-posting" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Post a Job</a>
+          <a routerLink="/client-dashboard" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Dashboard</a>
+          <a routerLink="/profile" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Profile</a>
+        </ng-container>
+      </ng-container>
+      
+      <!-- Default navigation for users not logged in -->
+      <ng-template #mobileDefaultNav>
+        <a routerLink="/project-discovery" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Browse Jobs</a>
+        <a routerLink="/talent-discovery" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Browse Talent</a>
+        <a routerLink="/project-posting" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Post a Job</a>
+        <a routerLink="/client-dashboard" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Dashboard</a>
+        <a routerLink="/profile" class="block px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white rounded-md transition-colors duration-150">Profile</a>
+      </ng-template>
     </div>
   </div>
 </header>
