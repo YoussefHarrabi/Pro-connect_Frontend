@@ -5,7 +5,6 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { TranslateModule } from '@ngx-translate/core';
 import { FileManagerComponent } from './components/file-manager/file-manager';
 import { TaskBoardComponent } from './components/task-board/task-board';
-import { WorkspaceChatComponent } from './components/workspace-chat/workspace-chat';
 import { SharedNavbar, NavbarConfig } from '../../shared/components/shared-navbar/shared-navbar';
 import { SharedFooter } from '../../shared/components/shared-footer/shared-footer';
 
@@ -44,16 +43,6 @@ interface FileAttachment {
   uploadedAt: Date;
 }
 
-interface ChatMessage {
-  id: string;
-  sender: string;
-  senderRole: 'client' | 'freelancer';
-  content: string;
-  timestamp: Date;
-  attachments?: FileAttachment[];
-  isRead: boolean;
-}
-
 interface ProjectWorkspace {
   id: string;
   projectTitle: string;
@@ -65,7 +54,6 @@ interface ProjectWorkspace {
   budget: number;
   description: string;
   tasks: Task[];
-  chatMessages: ChatMessage[];
   files: FileAttachment[];
 }
 
@@ -78,7 +66,6 @@ interface ProjectWorkspace {
     ReactiveFormsModule,
     TranslateModule,
     TaskBoardComponent,
-    WorkspaceChatComponent,
     FileManagerComponent,
     SharedNavbar,
     SharedFooter
@@ -115,17 +102,13 @@ export class WorkspaceComponent implements OnInit {
         action: () => this.setActiveTab('tasks')
       },
       {
-        label: 'workspace.navbar.chat',
-        action: () => this.setActiveTab('chat')
-      },
-      {
         label: 'workspace.navbar.files',
         action: () => this.setActiveTab('files')
       }
     ]
   };
 
-  activeTab: 'overview' | 'tasks' | 'chat' | 'files' = 'overview';
+  activeTab: 'overview' | 'tasks' | 'files' = 'overview';
   currentUserRole: 'client' | 'freelancer' = 'client'; // Mock current user role
   
   // Mock workspace data
@@ -226,48 +209,6 @@ export class WorkspaceComponent implements OnInit {
         updatedAt: new Date('2024-01-28T11:00:00')
       }
     ],
-    chatMessages: [
-      {
-        id: 'msg-001',
-        sender: 'John Smith',
-        senderRole: 'client',
-        content: 'Hi Sarah, excited to start working on this project!',
-        timestamp: new Date('2024-01-15T09:00:00'),
-        isRead: true
-      },
-      {
-        id: 'msg-002',
-        sender: 'Sarah Johnson',
-        senderRole: 'freelancer',
-        content: 'Hello John! Thank you for choosing me. I\'ll start with the homepage design as discussed.',
-        timestamp: new Date('2024-01-15T09:15:00'),
-        isRead: true
-      },
-      {
-        id: 'msg-003',
-        sender: 'Sarah Johnson',
-        senderRole: 'freelancer',
-        content: 'I\'ve uploaded the initial homepage mockup. Please take a look and let me know your thoughts.',
-        timestamp: new Date('2024-01-20T09:30:00'),
-        isRead: true
-      },
-      {
-        id: 'msg-004',
-        sender: 'John Smith',
-        senderRole: 'client',
-        content: 'The design looks fantastic! Just one small request - could you add our company logo in the header?',
-        timestamp: new Date('2024-01-20T14:20:00'),
-        isRead: true
-      },
-      {
-        id: 'msg-005',
-        sender: 'Sarah Johnson',
-        senderRole: 'freelancer',
-        content: 'Absolutely! I\'ll add the logo today and update the mockup.',
-        timestamp: new Date('2024-01-20T14:25:00'),
-        isRead: false
-      }
-    ],
     files: [
       {
         id: 'file-001',
@@ -316,15 +257,11 @@ export class WorkspaceComponent implements OnInit {
   }
 
   setActiveTab(tab: string): void {
-    this.activeTab = tab as 'overview' | 'tasks' | 'chat' | 'files';
+    this.activeTab = tab as 'overview' | 'tasks' | 'files';
   }
 
   getTasksByStatus(status: string): Task[] {
     return this.workspace.tasks.filter(task => task.status === status);
-  }
-
-  getUnreadMessagesCount(): number {
-    return this.workspace.chatMessages.filter(msg => !msg.isRead).length;
   }
 
   getProjectProgress(): number {
@@ -417,16 +354,6 @@ export class WorkspaceComponent implements OnInit {
       updatedAt: new Date()
     };
     this.workspace.tasks.push(newTask);
-  }
-
-  onMessageSent(messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'isRead'>): void {
-    const newMessage: ChatMessage = {
-      ...messageData,
-      id: 'msg-' + Date.now(),
-      timestamp: new Date(),
-      isRead: false
-    };
-    this.workspace.chatMessages.push(newMessage);
   }
 
   onFileUploaded(fileData: Omit<FileAttachment, 'id' | 'uploadedAt'>): void {

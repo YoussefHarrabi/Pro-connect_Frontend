@@ -26,6 +26,7 @@ import {
   ApplicationDto, 
   ApplicationStatus 
 } from '../../../shared/services/application.service';
+import { BudgetType, OfferCreateRequest, OfferDto, OfferService, OfferStatus } from '../../../shared/services/offer.service';
 
 // Define OngoingProject interface
 interface OngoingProject {
@@ -39,23 +40,6 @@ interface OngoingProject {
   deadline: Date;
   status: 'active' | 'paused' | 'completed';
   progress: number; // 0-100
-}
-
-// Define Offer interface
-interface Offer {
-  id: string;
-  title: string;
-  description: string;
-  budget: {
-    amount: number;
-    type: 'fixed' | 'hourly';
-  };
-  timeline: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'expired';
-  sentDate: Date;
-  expiryDate: Date;
-  talentId: string;
-  talentName: string;
 }
 
 @Component({
@@ -95,7 +79,9 @@ export class ClientDashboard implements OnInit, OnDestroy {
   projects: ProjectDto[] = [];
   projectStats: ProjectStats | null = null;
   applications: ApplicationDto[] = [];
-  offers: Offer[] = [];
+  offers: OfferDto[] = [];
+  BudgetType = BudgetType;
+  OfferStatus = OfferStatus;
   ongoingProjects: OngoingProject[] = [];
   isLoading = false;
   
@@ -130,11 +116,14 @@ export class ClientDashboard implements OnInit, OnDestroy {
     private router: Router,
     private projectService: ProjectService,
     private applicationService: ApplicationService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private offerService: OfferService, // ✅ Add this
+
   ){
   const currentUser = this.applicationService.getCurrentUsername();
   console.log('🚀 ClientDashboard initialized for user:', currentUser || 'Not authenticated');
 }
+
 
   ngOnInit(): void {
     this.initializeForms();
@@ -148,15 +137,15 @@ export class ClientDashboard implements OnInit, OnDestroy {
 
   initializeForms(): void {
     // Offer form
-    this.offerForm = this.fb.group({
-      title: ['', [Validators.required, Validators.minLength(5)]],
-      description: ['', [Validators.required, Validators.minLength(20)]],
-      budgetAmount: ['', [Validators.required, Validators.min(1)]],
-      budgetType: ['fixed', Validators.required],
-      timeline: ['', Validators.required],
-      startDate: [''],
-      terms: ['', [Validators.required, Validators.minLength(50)]]
-    });
+   this.offerForm = this.fb.group({
+    title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
+    description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(1000)]],
+    budgetAmount: ['', [Validators.required, Validators.min(1)]],
+    budgetType: [BudgetType.FIXED, Validators.required],
+    timeline: ['', [Validators.required, Validators.minLength(3)]],
+    startDate: [''],
+    terms: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(2000)]]
+  });
 
     // ✅ Edit project form
     this.editProjectForm = this.fb.group({
@@ -192,16 +181,60 @@ loadData(): void {
   
   // ✅ Load applications for client's projects
   this.loadApplications();
+  this.loadOffers(); // ✅ Add this
+}
+// Add the loadOffers method:
+private loadOffers(): void {
+  console.log('📤 Loading offers sent by client...');
   
-  // Load mock data for now
-  this.loadMockOffers();
-  this.loadOngoingProjects();
+  this.offerService.getSentOffers()
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (offers) => {
+        this.offers = offers;
+        console.log('✅ Client offers loaded:', offers.length);
+      },
+      error: (error) => {
+        console.error('❌ Error loading offers:', error);
+        this.offers = []; // Fallback to empty array
+      }
+    });
 }
 
   // ✅ Load all projects and filter for client's projects
-// ✅ Update loadAllProjects to use dynamic user
+// ✅ Update loadAllProjects to use getMyProjects for better accuracy
 private loadAllProjects(): void {
-  console.log('📋 Loading all projects and filtering for client...');
+  console.log('📋 Loading client projects...');
+  
+  // Try to use getMyProjects first (more accurate for client dashboard)
+  this.projectService.getMyProjects()
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (clientProjects) => {
+        this.projects = clientProjects;
+        
+        console.log('✅ Client projects loaded directly:', this.projects.length);
+        console.log('📋 Client projects:', this.projects);
+        
+        // Calculate stats from projects
+        this.calculateProjectStats();
+        
+        // ✅ Generate ongoing projects from IN_PROGRESS projects
+        this.generateOngoingProjects();
+        
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error loading my projects, trying fallback method:', error);
+        // Fallback to getAllOpenProjects with filtering
+        this.loadAllProjectsWithFilter();
+      }
+    });
+}
+
+// ✅ Fallback method to load all projects and filter
+private loadAllProjectsWithFilter(): void {
+  console.log('📋 Fallback: Loading all projects and filtering for client...');
   
   this.projectService.getAllOpenProjects()
     .pipe(takeUntil(this.destroy$))
@@ -220,6 +253,10 @@ private loadAllProjects(): void {
         
         // Calculate stats from filtered projects
         this.calculateProjectStats();
+        
+        // ✅ Generate ongoing projects from IN_PROGRESS projects
+        this.generateOngoingProjects();
+        
         this.isLoading = false;
       },
       error: (error) => {
@@ -228,6 +265,7 @@ private loadAllProjects(): void {
         // Fallback to mock data
         this.loadMockProjects();
         this.calculateProjectStats();
+        this.generateOngoingProjects();
       }
     });
 }
@@ -351,6 +389,33 @@ private loadApplications(): void {
         applicationCount: 12,
         createdAt: '2025-01-10T08:45:00Z',
         updatedAt: '2025-01-30T16:30:00Z'
+      },
+      {
+        id: 4,
+        title: 'Marketing Campaign Development',
+        description: 'Create a comprehensive digital marketing campaign including social media strategy, content creation, and analytics tracking.',
+        category: ProjectCategory.MARKETING_SALES,
+        skills: ['Digital Marketing', 'Social Media', 'Content Strategy', 'Analytics'],
+        projectType: ProjectType.FIXED,
+        budgetMin: 3000,
+        budgetMax: 5000,
+        currency: 'EUR',
+        budgetNegotiable: true,
+        timeline: '6 weeks',
+        complexity: ComplexityLevel.INTERMEDIATE,
+        preferredTalentType: 'FREELANCER' as any,
+        experienceLevel: ExperienceLevel.EXPERT,
+        location: 'Remote',
+        isRemote: true,
+        isUrgent: false,
+        isFeatured: true,
+        deadline: '2025-09-15',
+        status: ProjectStatus.IN_PROGRESS,
+        clientUsername: 'currentUser',
+        assignedTalentUsername: 'marketingpro',
+        applicationCount: 15,
+        createdAt: '2025-01-15T11:00:00Z',
+        updatedAt: '2025-02-01T14:30:00Z'
       }
     ];
     console.log('✅ Loaded mock projects for testing');
@@ -407,7 +472,7 @@ private loadApplications(): void {
         id: 4,
         projectId: 2,
         projectTitle: 'Mobile App UI/UX Design',
-        applicantUsername: 'uxdesigner',
+        applicantUsername: 'designpro',
         coverLetter: 'Dear Hiring Manager,\n\nI am a UX/UI designer with 4 years of experience in mobile app design. I specialize in creating intuitive and engaging user experiences.\n\nMy design process:\n- User research and analysis\n- Wireframing and prototyping\n- Visual design and branding\n- Usability testing\n\nI would love to help bring your fitness app vision to life!',
         proposedBudget: 2800,
         proposedTimeline: '4 weeks',
@@ -420,6 +485,21 @@ private loadApplications(): void {
       },
       {
         id: 5,
+        projectId: 4,
+        projectTitle: 'Marketing Campaign Development',
+        applicantUsername: 'marketingpro',
+        coverLetter: 'Hello,\n\nI am a digital marketing specialist with 6+ years of experience in creating successful marketing campaigns. I have helped numerous businesses increase their online presence and conversions.\n\nMy expertise includes:\n- Social media strategy\n- Content marketing\n- Performance analytics\n- Campaign optimization\n\nI am excited to help grow your business!',
+        proposedBudget: 4200,
+        proposedTimeline: '6 weeks',
+        hourlyRate: undefined,
+        additionalQuestions: 'What are your current marketing channels and main target audience?',
+        attachmentPaths: 'marketing_portfolio.pdf',
+        selectedPortfolioItems: 'campaign1,campaign2,campaign3',
+        status: ApplicationStatus.ACCEPTED,
+        createdAt: '2025-01-16T13:20:00Z'
+      },
+      {
+        id: 6,
         projectId: 3,
         projectTitle: 'Content Writing for Blog',
         applicantUsername: 'contentwriter',
@@ -437,38 +517,39 @@ private loadApplications(): void {
     console.log('✅ Loaded mock applications for testing');
   }
 
-  private loadMockOffers(): void {
-    this.offers = [
-      {
-        id: 'offer-1',
-        title: 'Website Development Offer',
-        description: 'Offer for building the e-commerce website with specific requirements.',
-        budget: { amount: 5000, type: 'fixed' },
-        timeline: '10 weeks',
-        status: 'pending',
-        sentDate: new Date('2025-01-30'),
-        expiryDate: new Date('2025-02-06'),
-        talentId: 'johndoe',
-        talentName: 'John Doe'
-      }
-    ];
-  }
-
-  private loadOngoingProjects(): void {
-    this.ongoingProjects = [
-      {
-        id: 'ongoing-1',
-        title: 'Mobile App UI/UX Design',
-        description: 'Design a modern and intuitive mobile app interface for a fitness tracking application.',
-        freelancerName: 'UX Designer Pro',
-        freelancerId: 'uxdesigner',
-        budget: 2800,
-        startDate: new Date('2025-01-28'),
-        deadline: new Date('2025-02-25'),
-        status: 'active',
-        progress: 35
-      }
-    ];
+  // ✅ Generate ongoing projects from IN_PROGRESS projects
+  private generateOngoingProjects(): void {
+    console.log('🔄 Generating ongoing projects from IN_PROGRESS projects...');
+    
+    // Find projects with IN_PROGRESS status
+    const inProgressProjects = this.projects.filter(project => 
+      project.status === ProjectStatus.IN_PROGRESS
+    );
+    
+    console.log('📋 Found IN_PROGRESS projects:', inProgressProjects.length);
+    
+    // Convert to OngoingProject format
+    this.ongoingProjects = inProgressProjects.map(project => {
+      // Find accepted application for this project to get freelancer info
+      const acceptedApp = this.applications.find(app => 
+        app.projectId === project.id && app.status === ApplicationStatus.ACCEPTED
+      );
+      
+      return {
+        id: `ongoing-${project.id}`,
+        title: project.title,
+        description: project.description,
+        freelancerName: acceptedApp ? acceptedApp.applicantUsername : project.assignedTalentUsername || 'Assigned Freelancer',
+        freelancerId: acceptedApp ? acceptedApp.applicantUsername : project.assignedTalentUsername || 'unknown',
+        budget: project.budgetMax || project.budgetMin || 0,
+        startDate: project.updatedAt ? new Date(project.updatedAt) : new Date(project.createdAt),
+        deadline: project.deadline ? new Date(project.deadline) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days from now
+        status: 'active' as const,
+        progress: Math.floor(Math.random() * 60) + 20 // Random progress between 20-80% for demo
+      };
+    });
+    
+    console.log('✅ Generated ongoing projects:', this.ongoingProjects.length);
   }
 
   // ✅ Tab switching
@@ -679,22 +760,22 @@ updateApplicationStatus(application: ApplicationDto, status: ApplicationStatus):
   }
 
   // ✅ Offer management methods
-  openOfferModal(application: ApplicationDto): void {
-    this.selectedApplication = application;
-    
-    // Pre-fill offer form with application data
-    this.offerForm.patchValue({
-      title: `Offer for ${application.projectTitle}`,
-      description: `We would like to offer you the project: ${application.projectTitle}`,
-      budgetAmount: application.proposedBudget,
-      budgetType: application.hourlyRate ? 'hourly' : 'fixed',
-      timeline: application.proposedTimeline,
-      terms: 'Payment will be made in milestones as agreed. All work must be completed to satisfaction before final payment.'
-    });
-    
-    this.showOfferModal = true;
-    document.body.style.overflow = 'hidden';
-  }
+openOfferModal(application: ApplicationDto): void {
+  this.selectedApplication = application;
+  
+  // Pre-fill offer form with application data
+  this.offerForm.patchValue({
+    title: `Offer for ${application.projectTitle}`,
+    description: `We would like to offer you the project: ${application.projectTitle}`,
+    budgetAmount: application.proposedBudget,
+    budgetType: application.hourlyRate ? BudgetType.HOURLY : BudgetType.FIXED,
+    timeline: application.proposedTimeline,
+    terms: 'Payment will be made in milestones as agreed. All work must be completed to satisfaction before final payment.'
+  });
+  
+  this.showOfferModal = true;
+  document.body.style.overflow = 'hidden';
+}
 
   closeOfferModal(): void {
     this.showOfferModal = false;
@@ -703,20 +784,60 @@ updateApplicationStatus(application: ApplicationDto, status: ApplicationStatus):
     document.body.style.overflow = 'auto';
   }
 
-  sendOffer(): void {
-    if (this.offerForm.valid && this.selectedApplication) {
-      const formValue = this.offerForm.value;
-      
-      // TODO: Call backend API to send offer
-      console.log('📤 Sending offer:', formValue);
-      
-      // Update application status to offered
-      this.updateApplicationStatus(this.selectedApplication, ApplicationStatus.OFFER_SENT);
-      
-      this.closeOfferModal();
-      alert('Offer sent successfully!');
+// Update the sendOffer method to use the real API:
+sendOffer(): void {
+  if (this.offerForm.valid && this.selectedApplication) {
+    const formValue = this.offerForm.value;
+    
+    // Validate the offer request
+    const offerRequest: OfferCreateRequest = {
+      title: formValue.title,
+      description: formValue.description,
+      budgetAmount: parseFloat(formValue.budgetAmount),
+      budgetType: formValue.budgetType,
+      timeline: formValue.timeline,
+      startDate: formValue.startDate || undefined,
+      terms: formValue.terms
+    };
+
+    // Validate the request
+    const validationErrors = this.offerService.validateOfferRequest(offerRequest);
+    if (validationErrors.length > 0) {
+      alert('Please fix the following errors:\n' + validationErrors.join('\n'));
+      return;
     }
+
+    console.log('📤 Sending offer:', offerRequest);
+    
+    this.offerService.createOffer(this.selectedApplication.id, offerRequest)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('✅ Offer sent successfully:', response);
+          
+          // Update application status locally
+          const appIndex = this.applications.findIndex(app => app.id === this.selectedApplication!.id);
+          if (appIndex !== -1) {
+            this.applications[appIndex].status = ApplicationStatus.OFFER_SENT;
+          }
+          
+          // Refresh offers list
+          this.loadOffers();
+          
+          this.closeOfferModal();
+          alert('Offer sent successfully!');
+        },
+        error: (error) => {
+          console.error('❌ Error sending offer:', error);
+          alert('Error sending offer: ' + error);
+        }
+      });
+  } else {
+    console.log('❌ Form is invalid or no application selected');
+    this.markFormGroupTouched(this.offerForm);
   }
+}
+
 
   // ✅ Helper methods
   getProjectStatusColor(status: ProjectStatus): string {
@@ -729,6 +850,7 @@ updateApplicationStatus(application: ApplicationDto, status: ApplicationStatus):
       default: return 'text-gray-600 bg-gray-100';
     }
   }
+  
 
   getProjectStatusLabel(status: ProjectStatus): string {
     return this.projectService.getProjectStatusLabel(status);
@@ -765,6 +887,46 @@ updateApplicationStatus(application: ApplicationDto, status: ApplicationStatus):
   getStarArray(rating: number): number[] {
     return Array(5).fill(0).map((_, i) => i < Math.floor(rating) ? 1 : 0);
   }
+
+ 
+
+private markFormGroupTouched(formGroup: FormGroup): void {
+  Object.keys(formGroup.controls).forEach(key => {
+    const control = formGroup.get(key);
+    control?.markAsTouched();
+  });
+}
+
+// Add helper methods for offer management:
+formatOfferBudget(offer: OfferDto): string {
+  return this.offerService.formatBudget(offer.budgetAmount, offer.budgetType);
+}
+
+getOfferStatusColor(status: OfferStatus): string {
+  return this.offerService.getStatusColor(status);
+}
+
+getOfferStatusLabel(status: OfferStatus): string {
+  return this.offerService.getStatusLabel(status);
+}
+
+cancelOffer(offer: OfferDto): void {
+  if (confirm(`Are you sure you want to cancel the offer "${offer.title}"?`)) {
+    this.offerService.cancelOffer(offer.offerId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          console.log('✅ Offer cancelled successfully');
+          this.loadOffers(); // Refresh offers list
+          alert('Offer cancelled successfully!');
+        },
+        error: (error) => {
+          console.error('❌ Error cancelling offer:', error);
+          alert('Error cancelling offer: ' + error);
+        }
+      });
+  }
+}
 
   // ✅ Computed properties
   get filteredProjects(): ProjectDto[] {

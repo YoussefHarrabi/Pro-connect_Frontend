@@ -53,7 +53,6 @@
     }
 
     .tasks-tab,
-    .chat-tab,
     .files-tab {
       min-height: 600px;
       display: flex;
@@ -107,7 +106,6 @@
       }
     }
 
-    .chat-tab,
     .files-tab {
       height: 500px !important;
     }

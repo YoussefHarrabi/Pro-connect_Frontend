@@ -590,7 +590,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                   <div>
                     <p class="text-sm text-gray-500">Budget</p>
-                    <p class="font-semibold text-gray-900">€{{ offer.budget.amount | number }}</p>
+                    <p class="font-semibold text-gray-900">€{{ offer.budgetAmount | number }}</p>
                   </div>
                   <div>
                     <p class="text-sm text-gray-500">Timeline</p>
@@ -598,17 +598,16 @@
                   </div>
                   <div>
                     <p class="text-sm text-gray-500">Sent To</p>
-                    <p class="font-semibold text-gray-900">{{ offer.talentName }}</p>
+                    <p class="font-semibold text-gray-900">{{ offer.applicantUsername }}</p>
                   </div>
                 </div>
               </div>
               
               <div class="flex flex-col items-end space-y-2">
-                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' ">
+                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getOfferStatusColor(offer.status)">
                   {{ offer.status | titlecase }}
                 </span>
-                <p class="text-xs text-gray-500">Sent: {{ formatDate(offer.sentDate.toISOString()) }}</p>
-                <p class="text-xs text-gray-500">Expires: {{ formatDate(offer.expiryDate.toISOString()) }}</p>
+                <p class="text-xs text-gray-500">Sent: {{ formatDate(offer.createdAt) }}</p>
               </div>
             </div>
           </div>

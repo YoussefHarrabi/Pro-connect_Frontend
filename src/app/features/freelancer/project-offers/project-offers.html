@@ -6,55 +6,79 @@
     
     <!-- Page Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">My Applications</h1>
-      <p class="mt-2 text-gray-600">Track and manage your project applications</p>
+      <h1 class="text-3xl font-bold text-gray-900">My Applications & Offers</h1>
+      <p class="mt-2 text-gray-600">Track and manage your project applications and offers</p>
     </div>
     
-    <!-- Tab Navigation -->
+    <!-- Main Tab Navigation (Applications vs Offers) -->
     <div class="bg-white rounded-xl shadow-sm border mb-8">
-      <nav class="flex space-x-8 px-6" aria-label="Tabs">
+      <nav class="flex space-x-8 px-6" aria-label="Main Tabs">
         <button
-          (click)="switchTab('pending')"
-          [class]="activeTab === 'pending' 
-            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
-            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+          (click)="switchMainTab('applications')"
+          [class]="activeTab === 'applications' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-lg'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-lg'"
         >
-          Pending Applications ({{ getPendingCount() }})
+          My Applications ({{ applications.length }})
         </button>
         <button
-          (click)="switchTab('under_review')"
-          [class]="activeTab === 'under_review' 
-            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
-            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
+          (click)="switchMainTab('offers')"
+          [class]="activeTab === 'offers' 
+            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-lg'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-lg'"
         >
-          Under Review ({{ getUnderReviewCount() }})
-        </button>
-        <button
-          (click)="switchTab('accepted')"
-          [class]="activeTab === 'accepted' 
-            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
-            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
-        >
-          Accepted ({{ getAcceptedCount() }})
-        </button>
-        <button
-          (click)="switchTab('rejected')"
-          [class]="activeTab === 'rejected' 
-            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
-            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
-        >
-          Rejected ({{ getRejectedCount() }})
-        </button>
-        <button
-          (click)="switchTab('all')"
-          [class]="activeTab === 'all' 
-            ? 'border-primary-500 text-primary-600 py-4 px-1 border-b-2 font-medium text-sm'
-            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm'"
-        >
-          All Applications ({{ applications.length }})
+          Offers Received ({{ offers.length }})
         </button>
       </nav>
     </div>
+
+    <!-- Applications Tab Content -->
+    <div *ngIf="activeTab === 'applications'">
+      <!-- Application Sub-tabs -->
+      <div class="bg-white rounded-xl shadow-sm border mb-6">
+        <nav class="flex space-x-6 px-6" aria-label="Application Tabs">
+          <button
+            (click)="switchApplicationTab('pending')"
+            [class]="applicationSubTab === 'pending' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            Pending ({{ getPendingCount() }})
+          </button>
+          <button
+            (click)="switchApplicationTab('under_review')"
+            [class]="applicationSubTab === 'under_review' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            Under Review ({{ getUnderReviewCount() }})
+          </button>
+          <button
+            (click)="switchApplicationTab('accepted')"
+            [class]="applicationSubTab === 'accepted' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            Accepted ({{ getAcceptedCount() }})
+          </button>
+          <button
+            (click)="switchApplicationTab('rejected')"
+            [class]="applicationSubTab === 'rejected' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            Rejected ({{ getRejectedCount() }})
+          </button>
+          <button
+            (click)="switchApplicationTab('all')"
+            [class]="applicationSubTab === 'all' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            All ({{ applications.length }})
+          </button>
+        </nav>
+      </div>
 
     <!-- Loading State -->
     <div *ngIf="isLoading" class="flex justify-center items-center py-12">
@@ -205,6 +229,158 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <!-- Offers Tab Content -->
+    <div *ngIf="activeTab === 'offers'">
+      <!-- Offer Sub-tabs -->
+      <div class="bg-white rounded-xl shadow-sm border mb-6">
+        <nav class="flex space-x-6 px-6" aria-label="Offer Tabs">
+          <button
+            (click)="switchOfferTab('pending')"
+            [class]="offerSubTab === 'pending' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            Pending ({{ getPendingOffersCount() }})
+          </button>
+          <button
+            (click)="switchOfferTab('accepted')"
+            [class]="offerSubTab === 'accepted' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            Accepted ({{ getAcceptedOffersCount() }})
+          </button>
+          <button
+            (click)="switchOfferTab('rejected')"
+            [class]="offerSubTab === 'rejected' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            Rejected ({{ getRejectedOffersCount() }})
+          </button>
+          <button
+            (click)="switchOfferTab('all')"
+            [class]="offerSubTab === 'all' 
+              ? 'border-primary-500 text-primary-600 py-3 px-1 border-b-2 font-medium text-sm'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 border-b-2 font-medium text-sm'"
+          >
+            All ({{ offers.length }})
+          </button>
+        </nav>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+
+      <!-- Offers List -->
+      <div *ngIf="!isLoading" class="space-y-6">
+        <!-- Empty State -->
+        <div *ngIf="filteredOffers.length === 0" class="text-center py-12">
+          <div class="mx-auto h-12 w-12 text-gray-400">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+            </svg>
+          </div>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No Offers Found</h3>
+          <p class="mt-1 text-sm text-gray-500">You haven't received any offers yet.</p>
+          <div class="mt-6">
+            <a routerLink="/project-discovery" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+              Browse Projects
+            </a>
+          </div>
+        </div>
+
+        <!-- Offer Cards -->
+        <div *ngFor="let offer of filteredOffers" class="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden">
+          
+          <!-- Status Banner -->
+          <div *ngIf="offer.status === OfferStatus.ACCEPTED" class="bg-green-500 text-white text-center py-2 text-sm font-medium">
+            🎉 Offer Accepted - Project Started!
+          </div>
+          <div *ngIf="offer.status === OfferStatus.REJECTED" class="bg-red-500 text-white text-center py-2 text-sm font-medium">
+            Offer Declined
+          </div>
+          <div *ngIf="offer.status === OfferStatus.PENDING" class="bg-blue-500 text-white text-center py-2 text-sm font-medium">
+            ⏰ Pending Response - Action Required
+          </div>
+
+          <div class="p-6">
+            <!-- Offer Header -->
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ offer.title }}</h3>
+                <p class="text-primary-600 font-medium">{{ offer.projectTitle }}</p>
+                <p class="text-sm text-gray-600">From: {{ offer.clientUsername }}</p>
+              </div>
+              <div class="flex flex-col items-end space-y-2">
+                <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getOfferStatusColor(offer.status)">
+                  {{ getOfferStatusLabel(offer.status) }}
+                </span>
+                <span class="text-xs text-gray-500">{{ formatDate(offer.createdAt) }}</span>
+              </div>
+            </div>
+
+            <!-- Offer Details -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p class="text-sm text-gray-500">Budget</p>
+                <p class="font-semibold text-gray-900">{{ formatOfferBudget(offer) }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Timeline</p>
+                <p class="font-semibold text-gray-900">{{ offer.timeline }}</p>
+              </div>
+              <div *ngIf="offer.startDate">
+                <p class="text-sm text-gray-500">Start Date</p>
+                <p class="font-semibold text-gray-900">{{ offer.startDate }}</p>
+              </div>
+            </div>
+
+            <!-- Offer Description -->
+            <div class="mb-4">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Project Description</h4>
+              <p class="text-gray-700 text-sm line-clamp-3">{{ offer.description }}</p>
+            </div>
+
+            <!-- Terms Preview -->
+            <div class="mb-4">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Terms & Conditions</h4>
+              <p class="text-gray-700 text-sm line-clamp-2">{{ offer.terms }}</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+              <button
+                (click)="viewOfferDetails(offer)"
+                class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              >
+                View Details
+              </button>
+              
+              <button
+                *ngIf="canAcceptOffer(offer)"
+                (click)="acceptOffer(offer)"
+                class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+              >
+                Accept Offer
+              </button>
+              
+              <button
+                *ngIf="canRejectOffer(offer)"
+                (click)="rejectOffer(offer)"
+                class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
+              >
+                Reject Offer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Application Details Modal -->
@@ -307,6 +483,108 @@
           >
             View Project
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Offer Details Modal -->
+  <div *ngIf="showOfferModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+      <div class="p-6">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">Offer Details</h2>
+          <button
+            (click)="closeOfferModal()"
+            class="text-gray-400 hover:text-gray-600 text-xl font-bold"
+          >
+            ×
+          </button>
+        </div>
+
+        <div *ngIf="selectedOffer" class="space-y-6">
+          <!-- Offer Header -->
+          <div class="flex items-start justify-between border-b pb-4">
+            <div>
+              <h3 class="text-xl font-semibold text-gray-900">{{ selectedOffer.title }}</h3>
+              <p class="text-lg text-primary-600 font-medium mt-1">{{ selectedOffer.projectTitle }}</p>
+              <p class="text-gray-600 mt-1">From: <strong>{{ selectedOffer.clientUsername }}</strong></p>
+            </div>
+            <div class="text-right">
+              <span [class]="'px-3 py-1 rounded-full text-sm font-medium ' + getOfferStatusColor(selectedOffer.status)">
+                {{ getOfferStatusLabel(selectedOffer.status) }}
+              </span>
+              <p class="text-sm text-gray-500 mt-2">{{ formatDate(selectedOffer.createdAt) }}</p>
+            </div>
+          </div>
+
+          <!-- Offer Details -->
+          <div>
+            <h4 class="text-lg font-medium text-gray-900 mb-3">Offer Details</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-white border rounded-lg p-4">
+                <h5 class="text-sm font-medium text-gray-500 mb-1">Budget</h5>
+                <p class="text-xl font-bold text-primary-600">{{ formatOfferBudget(selectedOffer) }}</p>
+              </div>
+              <div class="bg-white border rounded-lg p-4">
+                <h5 class="text-sm font-medium text-gray-500 mb-1">Timeline</h5>
+                <p class="text-lg font-semibold text-gray-900">{{ selectedOffer.timeline }}</p>
+              </div>
+              <div *ngIf="selectedOffer.startDate" class="bg-white border rounded-lg p-4">
+                <h5 class="text-sm font-medium text-gray-500 mb-1">Start Date</h5>
+                <p class="text-lg font-semibold text-gray-900">{{ selectedOffer.startDate }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project Description -->
+          <div>
+            <h4 class="text-lg font-medium text-gray-900 mb-2">Project Description</h4>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <p class="text-gray-700 whitespace-pre-line">{{ selectedOffer.description }}</p>
+            </div>
+          </div>
+
+          <!-- Terms & Conditions -->
+          <div>
+            <h4 class="text-lg font-medium text-gray-900 mb-2">Terms & Conditions</h4>
+            <div class="bg-white border rounded-lg p-4">
+              <p class="text-gray-700 whitespace-pre-wrap">{{ selectedOffer.terms }}</p>
+            </div>
+          </div>
+
+          <!-- Additional Details -->
+          <div *ngIf="selectedOffer.details">
+            <h4 class="text-lg font-medium text-gray-900 mb-2">Additional Information</h4>
+            <div class="bg-blue-50 rounded-lg p-4">
+              <p class="text-gray-700 whitespace-pre-wrap">{{ selectedOffer.details }}</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex space-x-3 pt-6 border-t">
+            <button
+              *ngIf="canAcceptOffer(selectedOffer)"
+              (click)="acceptOffer(selectedOffer)"
+              class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium"
+            >
+              Accept Offer
+            </button>
+            <button
+              *ngIf="canRejectOffer(selectedOffer)"
+              (click)="rejectOffer(selectedOffer)"
+              class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+            >
+              Reject Offer
+            </button>
+            <button
+              (click)="closeOfferModal()"
+              class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
