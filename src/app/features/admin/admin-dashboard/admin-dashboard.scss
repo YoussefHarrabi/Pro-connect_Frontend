@@ -1,0 +1,97 @@
+.admin-dashboard {
+  .sidebar-overlay {
+    display: none;
+  }
+
+  .main-content {
+    transition: margin-left 0.3s ease;
+  }
+
+  .stats-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .quick-action-btn {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .activity-item {
+    &:hover {
+      background-color: #f8fafc;
+    }
+  }
+
+  // Custom scrollbar for activities
+  .activities-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .activities-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  .activities-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+
+  .activities-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+  .admin-dashboard {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard {
+    .sidebar-overlay {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 40;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .quick-actions-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-dashboard {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .quick-actions-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  }
+}

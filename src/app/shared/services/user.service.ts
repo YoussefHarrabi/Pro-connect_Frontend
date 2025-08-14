@@ -1,9 +1,31 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { UserProfileResponse, ProfileUpdateRequest, ResumeUpdateRequest, EducationDto, EducationRequest, CertificationDto, CertificationRequest, ExperienceDto, ExperienceRequest, PortfolioDto, SkillDto } from '../models/user';
 import { PortfolioRequest } from '../../core/dto';
+import { User } from '../../core/dto/user';
+
+// Admin-specific interfaces
+export interface AdminUserListResponse {
+  content: User[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
+export interface UserStatusUpdateRequest {
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+}
+
+export interface UserSearchCriteria {
+  searchTerm?: string;
+  role?: string;
+  status?: string;
+  page?: number;
+  size?: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -280,6 +302,90 @@ removeSkillFromCurrentUser(skillId: number): Observable<void> {
 // Search skills by keyword
 searchSkills(keyword: string): Observable<SkillDto[]> {
   return this.http.get<SkillDto[]>(`http://localhost:8081/api/skills/search?keyword=${keyword}`, this.getHttpOptions())
+    .pipe(catchError(this.handleError));
+}
+
+// ============= ADMIN ENDPOINTS =============
+
+/**
+ * Get all users with pagination and filtering (Admin only)
+ */
+getAllUsers(criteria: UserSearchCriteria = {}): Observable<AdminUserListResponse> {
+  let params = new HttpParams();
+  
+  if (criteria.searchTerm) {
+    params = params.set('search', criteria.searchTerm);
+  }
+  if (criteria.role) {
+    params = params.set('role', criteria.role);
+  }
+  if (criteria.status) {
+    params = params.set('status', criteria.status);
+  }
+  if (criteria.page !== undefined) {
+    params = params.set('page', criteria.page.toString());
+  }
+  if (criteria.size !== undefined) {
+    params = params.set('size', criteria.size.toString());
+  }
+
+  console.log('📡 Admin: Fetching users with criteria:', criteria);
+  
+  return this.http.get<AdminUserListResponse>(`${this.apiUrl}/admin/users`, {
+    ...this.getHttpOptions(),
+    params
+  }).pipe(catchError(this.handleError));
+}
+
+/**
+ * Get user by ID (Admin only)
+ */
+getUserById(userId: number): Observable<User> {
+  console.log('📡 Admin: Fetching user by ID:', userId);
+  
+  return this.http.get<User>(`${this.apiUrl}/admin/users/${userId}`, this.getHttpOptions())
+    .pipe(catchError(this.handleError));
+}
+
+/**
+ * Update user status (Admin only)
+ */
+updateUserStatus(userId: number, status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'): Observable<User> {
+  const request: UserStatusUpdateRequest = { status };
+  
+  console.log('📡 Admin: Updating user status:', { userId, status });
+  
+  return this.http.put<User>(`${this.apiUrl}/admin/users/${userId}/status`, request, this.getHttpOptions())
+    .pipe(catchError(this.handleError));
+}
+
+/**
+ * Delete user (Admin only)
+ */
+deleteUser(userId: number): Observable<void> {
+  console.log('📡 Admin: Deleting user:', userId);
+  
+  return this.http.delete<void>(`${this.apiUrl}/admin/users/${userId}`, this.getHttpOptions())
+    .pipe(catchError(this.handleError));
+}
+
+/**
+ * Get user statistics (Admin only)
+ */
+getUserStatistics(): Observable<{
+  totalUsers: number;
+  activeUsers: number;
+  newUsersThisMonth: number;
+  usersByRole: Record<string, number>;
+}> {
+  console.log('📡 Admin: Fetching user statistics');
+  
+  return this.http.get<{
+    totalUsers: number;
+    activeUsers: number;
+    newUsersThisMonth: number;
+    usersByRole: Record<string, number>;
+  }>(`${this.apiUrl}/admin/statistics`, this.getHttpOptions())
     .pipe(catchError(this.handleError));
 }
 // ============= PROFILE PICTURE ENDPOINTS =============

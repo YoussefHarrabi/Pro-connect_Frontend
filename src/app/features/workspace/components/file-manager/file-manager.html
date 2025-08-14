@@ -9,25 +9,67 @@
         <div class="flex items-center space-x-4 text-sm text-gray-500">
           <span>{{ files.length }} {{ 'workspace.files.filesCount' | translate }}</span>
           <span>{{ getTotalFileSize() }} {{ 'workspace.files.totalSize' | translate }}</span>
+          <!-- ✅ Add loading indicator -->
+          <span *ngIf="isLoading" class="text-blue-600">
+            <svg class="animate-spin h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading...
+          </span>
         </div>
       </div>
 
-      <!-- Upload Button -->
-      <div class="flex items-center space-x-3">
-        <label for="file-upload" class="cursor-pointer inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-          </svg>
-          {{ 'workspace.files.upload' | translate }}
-        </label>
-        <input
-          id="file-upload"
-          type="file"
-          multiple
-          class="hidden"
-          (change)="onFileSelected($event)"
-          accept="*/*"
-        />
+      <!-- Upload Button and Progress -->
+      <div class="flex flex-col items-end space-y-2">
+        <div class="flex items-center space-x-3">
+          <!-- ✅ Refresh button -->
+          <button
+            (click)="refreshFiles()"
+            class="p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+            [title]="'Refresh files'"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0V9a8 8 0 1115.356 2M15 15v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4"></path>
+            </svg>
+          </button>
+
+          <!-- Upload Button -->
+          <label 
+            for="file-upload" 
+            [class.opacity-50]="isUploading"
+            [class.cursor-not-allowed]="isUploading"
+            class="cursor-pointer inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+          >
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            {{ isUploading ? 'Uploading...' : ('workspace.files.upload' | translate) }}
+          </label>
+          <input
+            id="file-upload"
+            type="file"
+            multiple
+            [disabled]="isUploading"
+            class="hidden"
+            (change)="onFileSelected($event)"
+            accept="*/*"
+          />
+        </div>
+
+        <!-- ✅ Upload Progress -->
+        <div *ngIf="uploadProgress" class="w-full max-w-xs">
+          <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+            <span>{{ getUploadStatusMessage() }}</span>
+            <span>{{ getUploadProgress() }}%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              class="bg-primary-600 h-2 rounded-full transition-all duration-300"
+              [style.width.%]="getUploadProgress()"
+            ></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -42,22 +84,39 @@
             type="text"
             [(ngModel)]="searchQuery"
             [placeholder]="'workspace.files.search' | translate"
-            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-64"
+            class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-64"
           />
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
           </div>
+          <!-- ✅ Clear search button -->
+          <button 
+            *ngIf="searchQuery"
+            (click)="clearSearch()"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <svg class="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
         </div>
 
         <!-- Type Filter -->
         <select [(ngModel)]="filterType" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
           <option value="all">{{ 'workspace.files.allTypes' | translate }}</option>
-          <option value="images">{{ 'workspace.files.images' | translate }}</option>
-          <option value="documents">{{ 'workspace.files.documents' | translate }}</option>
-          <option value="archives">{{ 'workspace.files.archives' | translate }}</option>
+          <option *ngFor="let type of getAvailableFileTypes().slice(1)" [value]="type">{{ type }}</option>
         </select>
+
+        <!-- ✅ Reset filters button -->
+        <button 
+          *ngIf="searchQuery || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc'"
+          (click)="resetFilters()"
+          class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg"
+        >
+          Reset Filters
+        </button>
       </div>
 
       <!-- View Controls -->
@@ -103,24 +162,32 @@
     </div>
   </div>
 
-  <!-- File Statistics -->
+  <!-- ✅ Enhanced File Statistics -->
   <div class="file-stats bg-gray-50 border-b border-gray-200 px-6 py-4">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
       <div class="text-center">
-        <div class="text-2xl font-bold text-green-600">{{ getFilesByType()['images'] }}</div>
-        <div class="text-sm text-gray-500">{{ 'workspace.files.images' | translate }}</div>
+        <div class="text-2xl font-bold text-green-600">{{ getFilesByType()['Images'] || 0 }}</div>
+        <div class="text-sm text-gray-500">Images</div>
       </div>
       <div class="text-center">
-        <div class="text-2xl font-bold text-blue-600">{{ getFilesByType()['documents'] }}</div>
-        <div class="text-sm text-gray-500">{{ 'workspace.files.documents' | translate }}</div>
+        <div class="text-2xl font-bold text-blue-600">{{ getFilesByType()['Documents'] || 0 }}</div>
+        <div class="text-sm text-gray-500">Documents</div>
       </div>
       <div class="text-center">
-        <div class="text-2xl font-bold text-purple-600">{{ getFilesByType()['archives'] }}</div>
-        <div class="text-sm text-gray-500">{{ 'workspace.files.archives' | translate }}</div>
+        <div class="text-2xl font-bold text-purple-600">{{ getFilesByType()['Archives'] || 0 }}</div>
+        <div class="text-sm text-gray-500">Archives</div>
       </div>
       <div class="text-center">
-        <div class="text-2xl font-bold text-gray-600">{{ getFilesByType()['others'] }}</div>
-        <div class="text-sm text-gray-500">{{ 'workspace.files.others' | translate }}</div>
+        <div class="text-2xl font-bold text-red-600">{{ getFilesByType()['Videos'] || 0 }}</div>
+        <div class="text-sm text-gray-500">Videos</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-yellow-600">{{ getFilesByType()['Audio'] || 0 }}</div>
+        <div class="text-sm text-gray-500">Audio</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-gray-600">{{ getFilesByType()['Others'] || 0 }}</div>
+        <div class="text-sm text-gray-500">Others</div>
       </div>
     </div>
   </div>
@@ -128,8 +195,19 @@
   <!-- Files Content -->
   <div class="files-content flex-1 overflow-y-auto px-6 py-6">
     
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-12">
+      <div class="inline-flex items-center">
+        <svg class="animate-spin h-8 w-8 text-primary-600 mr-3" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-lg text-gray-600">Loading files for ...</span>
+      </div>
+    </div>
+
     <!-- Empty State -->
-    <div *ngIf="filteredFiles.length === 0" class="empty-state text-center py-12">
+    <div *ngIf="!isLoading && filteredFiles.length === 0 && files.length === 0" class="empty-state text-center py-12">
       <div class="mb-4">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
@@ -139,8 +217,25 @@
       <p class="text-gray-500 mb-4">{{ 'workspace.files.uploadFirst' | translate }}</p>
     </div>
 
+    <!-- No Results State -->
+    <div *ngIf="!isLoading && filteredFiles.length === 0 && files.length > 0" class="empty-state text-center py-12">
+      <div class="mb-4">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No files match your search</h3>
+      <p class="text-gray-500 mb-4">Try adjusting your search terms or filters</p>
+      <button 
+        (click)="resetFilters()"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+      >
+        Clear Filters
+      </button>
+    </div>
+
     <!-- Grid View -->
-    <div *ngIf="viewMode === 'grid' && filteredFiles.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+    <div *ngIf="!isLoading && viewMode === 'grid' && filteredFiles.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
       <div
         *ngFor="let file of filteredFiles"
         class="file-card bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
@@ -148,7 +243,7 @@
         <!-- File Preview -->
         <div class="file-preview mb-3 flex justify-center">
           <div *ngIf="isImageFile(file)" class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-            <img [src]="file.url" [alt]="file.name" class="w-full h-full object-cover" />
+            <img [src]="file.downloadUrl" [alt]="file.fileName" class="w-full h-full object-cover" loading="lazy" />
           </div>
           <div *ngIf="!isImageFile(file)" [class]="'w-16 h-16 rounded-lg flex items-center justify-center ' + getFileTypeColor(file)">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,9 +254,10 @@
 
         <!-- File Info -->
         <div class="file-info text-center">
-          <h3 class="text-sm font-medium text-gray-900 truncate mb-1" [title]="file.name">{{ file.name }}</h3>
+          <h3 class="text-sm font-medium text-gray-900 truncate mb-1" [title]="file.fileName">{{ file.fileName }}</h3>
           <p class="text-xs text-gray-500 mb-2">{{ formatFileSize(file.size) }}</p>
-          <p class="text-xs text-gray-400">{{ file.uploadedBy }}</p>
+          <p class="text-xs text-gray-400">{{ file.uploaderUsername }}</p>
+          <p class="text-xs text-gray-400">{{ getRelativeTime(file.createdAt) }}</p>
         </div>
 
         <!-- File Actions -->
@@ -190,7 +286,7 @@
     </div>
 
     <!-- List View -->
-    <div *ngIf="viewMode === 'list' && filteredFiles.length > 0" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div *ngIf="!isLoading && viewMode === 'list' && filteredFiles.length > 0" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -226,7 +322,7 @@
               <div class="flex items-center">
                 <div class="flex-shrink-0 w-8 h-8">
                   <div *ngIf="isImageFile(file)" class="w-8 h-8 rounded overflow-hidden">
-                    <img [src]="file.url" [alt]="file.name" class="w-full h-full object-cover" />
+                    <img [src]="file.downloadUrl" [alt]="file.fileName" class="w-full h-full object-cover" loading="lazy" />
                   </div>
                   <div *ngIf="!isImageFile(file)" [class]="'w-8 h-8 rounded flex items-center justify-center ' + getFileTypeColor(file)">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,7 +331,8 @@
                   </div>
                 </div>
                 <div class="ml-4">
-                  <div class="text-sm font-medium text-gray-900">{{ file.name }}</div>
+                  <div class="text-sm font-medium text-gray-900">{{ file.fileName }}</div>
+                  <div class="text-xs text-gray-500">{{ file.fileType }}</div>
                 </div>
               </div>
             </td>
@@ -243,10 +340,11 @@
               {{ formatFileSize(file.size) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ file.uploadedBy }}
+              {{ file.uploaderUsername }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ formatDate(file.uploadedAt) }}
+              <div>{{ formatDate(file.createdAt) }}</div>
+              <div class="text-xs text-gray-400">{{ getRelativeTime(file.createdAt) }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <div class="flex justify-end space-x-2">

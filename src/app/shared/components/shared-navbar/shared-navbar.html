@@ -33,6 +33,12 @@
                   <a routerLink="/project-offers" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
                     My Proposals
                   </a>
+                  <a routerLink="/freelancer-dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150" *ngIf="user.role === 'ROLE_FREELANCER'">
+                    My Projects
+                  </a>
+                  <a routerLink="/company-dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150" *ngIf="user.role === 'ROLE_SERVICE_COMPANY'">
+                    My Projects
+                  </a>
                   <a routerLink="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150">
                     Profile
                   </a>

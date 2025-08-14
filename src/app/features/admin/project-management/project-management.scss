@@ -1,0 +1,112 @@
+.admin-project-management {
+  .project-card {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .status-indicator {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .action-button {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+
+  .overdue-indicator {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  // Table styling
+  .project-table {
+    tbody tr {
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: #f8fafc;
+      }
+    }
+  }
+
+  // Budget styling
+  .budget-display {
+    font-weight: 600;
+    color: #059669;
+  }
+
+  // Client info styling
+  .client-info {
+    .client-avatar {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+  }
+
+  // Talent assignment styling
+  .talent-assigned {
+    .talent-avatar {
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+  .admin-project-management {
+    .filter-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-project-management {
+    .filter-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .table-container {
+      font-size: 0.875rem;
+    }
+
+    .project-description {
+      max-width: 200px;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-project-management {
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    .table-container table {
+      min-width: 800px;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+  }
+}

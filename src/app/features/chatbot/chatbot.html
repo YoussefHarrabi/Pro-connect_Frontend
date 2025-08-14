@@ -3,7 +3,7 @@
   <app-shared-navbar [config]="navbarConfig"></app-shared-navbar>
 
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Chat Header -->
+    <!-- Enhanced Chat Header -->
     <div class="bg-white rounded-t-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
@@ -15,10 +15,30 @@
           <div>
             <h1 class="text-xl font-bold text-gray-900">{{ 'aiAssistant' | translate }}</h1>
             <p class="text-sm text-gray-500">{{ 'aiAssistantDescription' | translate }}</p>
+            <!-- ✅ AI Status Indicator -->
+            <div class="flex items-center mt-1">
+              <div [class]="'w-2 h-2 rounded-full mr-2 ' + (aiServiceAvailable && !hasAiError ? 'bg-green-500' : 'bg-red-500')"></div>
+              <span class="text-xs" [class]="aiServiceAvailable && !hasAiError ? 'text-green-600' : 'text-red-600'">
+                {{ statusMessage }}
+              </span>
+            </div>
           </div>
         </div>
         
         <div class="flex items-center space-x-3">
+          <!-- Generate Document Button -->
+          <button
+            *ngIf="showGenerateButton"
+            (click)="generateDocument()"
+            [disabled]="isAiLoading"
+            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors duration-200 flex items-center"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            {{ 'generateDocument' | translate }}
+          </button>
+          
           <!-- Language Switch -->
           <button
             (click)="switchLanguage()"
@@ -47,25 +67,34 @@
           <div [class]="message.isUser ? 
                        'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-green-500 text-white' : 
                        'max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100 text-gray-800'">
-            <p class="text-sm">{{ message.text }}</p>
-            <p class="text-xs mt-1 opacity-70">{{ formatTime(message.timestamp) }}</p>
+            <!-- ✅ Enhanced message display -->
+            <div class="whitespace-pre-wrap">{{ message.text }}</div>
+            <div class="text-xs mt-1 opacity-70 flex items-center justify-between">
+              <span>{{ formatTime(message.timestamp) }}</span>
+              <span *ngIf="!message.isUser && aiServiceAvailable" class="text-xs">
+                🤖 AI
+              </span>
+            </div>
           </div>
         </div>
 
-        <!-- Typing Indicator -->
+        <!-- Enhanced Typing Indicator -->
         <div *ngIf="isTyping" class="flex justify-start">
           <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100">
-            <div class="flex space-x-1">
-              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            <div class="flex items-center space-x-2">
+              <div class="flex space-x-1">
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+              </div>
+              <span class="text-xs text-gray-500">AI is thinking...</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Chat Input -->
+    <!-- Enhanced Chat Input -->
     <div class="bg-white rounded-b-lg shadow-sm border border-gray-200 p-4">
       <div class="flex items-center space-x-4">
         <div class="flex-1">
@@ -73,26 +102,35 @@
             [(ngModel)]="currentMessage"
             (keypress)="onKeyPress($event)"
             [placeholder]="'typeMessage' | translate"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+            [disabled]="isAiLoading"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none disabled:opacity-50"
             rows="2"
           ></textarea>
         </div>
         <button
           (click)="sendMessage()"
-          [disabled]="!currentMessage.trim() || isTyping"
-          class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          [disabled]="!currentMessage.trim() || isAiLoading"
+          class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg *ngIf="!isAiLoading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
           </svg>
+          <div *ngIf="isAiLoading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
         </button>
+      </div>
+      
+      <!-- Message Counter -->
+      <div class="mt-2 text-xs text-gray-500 flex justify-between">
+        <span>{{ currentMessage.length }}/5000 characters</span>
+        <span *ngIf="currentConversation">{{ currentConversation.messages.length }} messages in conversation</span>
       </div>
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Enhanced Quick Actions -->
     <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ 'quickActions' | translate }}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Enhanced quick action buttons with new actions -->
         <button
           (click)="sendQuickActionProject()"
           class="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
@@ -143,10 +181,46 @@
             </div>
           </div>
         </button>
+
+        <!-- ✅ New Technology Stack Action -->
+        <button
+          (click)="sendQuickActionTechnology()"
+          class="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900">Technology Stack</p>
+              <p class="text-sm text-gray-500">Get tech recommendations</p>
+            </div>
+          </div>
+        </button>
+
+        <!-- ✅ New Timeline Action -->
+        <button
+          (click)="sendQuickActionTimeline()"
+          class="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900">Project Timeline</p>
+              <p class="text-sm text-gray-500">Estimate project duration</p>
+            </div>
+          </div>
+        </button>
       </div>
     </div>
 
-    <!-- Features Info -->
+    <!-- Enhanced Features Info -->
     <div class="mt-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ 'aiCapabilities' | translate }}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,6 +247,19 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
           </svg>
           <span class="text-sm text-gray-700">{{ 'skillRecommendations' | translate }}</span>
+        </div>
+        <!-- ✅ New AI Features -->
+        <div class="flex items-center space-x-3">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="text-sm text-gray-700">Intelligent Requirements Gathering</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="text-sm text-gray-700">Automatic Document Generation</span>
         </div>
       </div>
     </div>

@@ -55,6 +55,18 @@ export const routes: Routes = [
     data: { role: 'ROLE_CLIENT' } // Only clients
   },
   { 
+    path: 'freelancer-dashboard', 
+    loadComponent: () => import('./features/freelancer/freelancer-dashboard/freelancer-dashboard').then(c => c.FreelancerDashboard),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: 'ROLE_FREELANCER' } // Only freelancers
+  },
+  { 
+    path: 'company-dashboard', 
+    loadComponent: () => import('./features/service-company/company-dashboard/company-dashboard').then(c => c.CompanyDashboard),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: 'ROLE_SERVICE_COMPANY' } // Only service companies
+  },
+  { 
     path: 'chatbot', 
     loadComponent: () => import('./features/chatbot/chatbot').then(c => c.Chatbot),
     canActivate: [AuthGuard]
@@ -62,7 +74,41 @@ export const routes: Routes = [
   { 
     path: 'workspace/:id', 
     loadComponent: () => import('./features/workspace/workspace').then(c => c.WorkspaceComponent),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ROLE_CLIENT', 'ROLE_FREELANCER', 'ROLE_SERVICE_COMPANY'] } // All roles can access workspace
+  },
+  { 
+    path: 'admin-dashboard', 
+    loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard').then(c => c.AdminDashboard),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: 'ROLE_ADMIN' } // Only admins
+  },
+  { 
+    path: 'admin-dashboard-dev', 
+    loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard').then(c => c.AdminDashboard),
+    canActivate: [AuthGuard] // Temporary dev access - remove in production
+  },
+  { 
+    path: 'admin/users', 
+    loadComponent: () => import('./features/admin/user-management/user-management').then(c => c.UserManagement),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: 'ROLE_ADMIN' } // Only admins
+  },
+  { 
+    path: 'admin/users-dev', 
+    loadComponent: () => import('./features/admin/user-management/user-management').then(c => c.UserManagement),
+    canActivate: [AuthGuard] // Temporary dev access - remove in production
+  },
+  { 
+    path: 'admin/projects', 
+    loadComponent: () => import('./features/admin/project-management/project-management').then(c => c.ProjectManagement),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { role: 'ROLE_ADMIN' } // Only admins
+  },
+  { 
+    path: 'admin/projects-dev', 
+    loadComponent: () => import('./features/admin/project-management/project-management').then(c => c.ProjectManagement),
+    canActivate: [AuthGuard] // Temporary dev access - remove in production
   },
   { 
     path: 'login', 

@@ -1,0 +1,359 @@
+<div class="admin-dashboard">
+  <div class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <app-admin-sidebar 
+      [isCollapsed]="isSidebarCollapsed"
+      [activeItem]="activeMenuItem"
+      (itemSelected)="onSidebarItemSelected($event)"
+      (toggleSidebar)="onSidebarToggle()">
+    </app-admin-sidebar>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Top Header -->
+      <header class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ 'ADMIN.DASHBOARD.TITLE' | translate }}</h1>
+            <p class="text-gray-600 mt-1">{{ 'ADMIN.DASHBOARD.SUBTITLE' | translate }}</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button class="p-2 text-gray-400 hover:text-gray-600 relative">
+              <i class="fas fa-bell text-xl"></i>
+              <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
+            </button>
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <i class="fas fa-crown text-white text-sm"></i>
+              </div>
+              <span class="text-sm font-medium text-gray-900">Administrator</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-6">
+        @if (isLoading) {
+          <div class="flex items-center justify-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            <span class="ml-3 text-gray-600">{{ 'COMMON.LOADING' | translate }}</span>
+          </div>
+        } @else {
+          <!-- Enhanced Stats Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Users -->
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-blue-100 text-sm font-medium">{{ 'ADMIN.DASHBOARD.TOTAL_USERS' | translate }}</p>
+                  <p class="text-3xl font-bold">{{ stats.totalUsers | number }}</p>
+                  <p class="text-blue-100 text-xs mt-1">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    {{ stats.verifiedUsers }} {{ 'ADMIN.DASHBOARD.VERIFIED' | translate }}
+                  </p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                  <i class="fas fa-users text-2xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Projects -->
+            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-green-100 text-sm font-medium">{{ 'ADMIN.DASHBOARD.TOTAL_PROJECTS' | translate }}</p>
+                  <p class="text-3xl font-bold">{{ stats.totalProjects | number }}</p>
+                  <p class="text-green-100 text-xs mt-1">
+                    <i class="fas fa-play-circle mr-1"></i>
+                    {{ stats.inProgressProjects }} {{ 'ADMIN.DASHBOARD.IN_PROGRESS' | translate }}
+                  </p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                  <i class="fas fa-project-diagram text-2xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Revenue -->
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-purple-100 text-sm font-medium">{{ 'ADMIN.DASHBOARD.TOTAL_REVENUE' | translate }}</p>
+                  <p class="text-3xl font-bold">${{ stats.totalRevenue | number:'1.0-0' }}</p>
+                  <p class="text-purple-100 text-xs mt-1">
+                    <i class="fas fa-trophy mr-1"></i>
+                    {{ stats.completedProjects }} {{ 'ADMIN.DASHBOARD.COMPLETED' | translate }}
+                  </p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                  <i class="fas fa-dollar-sign text-2xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Applications -->
+            <div class="bg-gradient-to-br from-orange-500 to-red-500 text-white rounded-xl p-6 shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-orange-100 text-sm font-medium">{{ 'ADMIN.DASHBOARD.APPLICATIONS' | translate }}</p>
+                  <p class="text-3xl font-bold">{{ stats.totalApplications | number }}</p>
+                  <p class="text-orange-100 text-xs mt-1">
+                    <i class="fas fa-clock mr-1"></i>
+                    {{ stats.pendingApplications }} {{ 'ADMIN.DASHBOARD.PENDING' | translate }}
+                  </p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                  <i class="fas fa-file-alt text-2xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Statistics Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- User Statistics Detail -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                  <i class="fas fa-users mr-2 text-blue-600"></i>
+                  {{ 'ADMIN.DASHBOARD.USER_BREAKDOWN' | translate }}
+                </h3>
+                <button (click)="navigateToUserManagement()" 
+                        class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                  {{ 'ADMIN.DASHBOARD.VIEW_ALL' | translate }}
+                  <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+              </div>
+              
+              @if (userStatistics) {
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.VERIFIED_USERS' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ userStatistics.verifiedUsers }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.PENDING_VERIFICATION' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ userStatistics.pendingVerification }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.FREELANCERS' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ userStatistics.freelancers }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.CLIENTS' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ userStatistics.clients }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-orange-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.SERVICE_COMPANIES' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ userStatistics.serviceCompanies }}</span>
+                  </div>
+                  
+                  <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between">
+                      <span class="text-gray-700 font-medium">{{ 'ADMIN.DASHBOARD.VERIFICATION_RATE' | translate }}</span>
+                      <span class="font-bold text-green-600">{{ userStatistics.verificationRate | number:'1.1-1' }}%</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Project Statistics Detail -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                  <i class="fas fa-project-diagram mr-2 text-green-600"></i>
+                  {{ 'ADMIN.DASHBOARD.PROJECT_BREAKDOWN' | translate }}
+                </h3>
+                <button (click)="navigateToProjectManagement()" 
+                        class="text-green-600 hover:text-green-800 text-sm font-medium">
+                  {{ 'ADMIN.DASHBOARD.VIEW_ALL' | translate }}
+                  <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+              </div>
+              
+              @if (projectStatistics) {
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.OPEN_PROJECTS' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ projectStatistics.openProjects }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.IN_PROGRESS_PROJECTS' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ projectStatistics.inProgressProjects }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.COMPLETED_PROJECTS' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ projectStatistics.completedProjects }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
+                      <span class="text-gray-700">{{ 'ADMIN.DASHBOARD.CANCELLED_PROJECTS' | translate }}</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">{{ projectStatistics.cancelledProjects }}</span>
+                  </div>
+                  
+                  <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-gray-700 font-medium">{{ 'ADMIN.DASHBOARD.AVERAGE_BUDGET' | translate }}</span>
+                      <span class="font-bold text-purple-600">${{ projectStatistics.averageBudget | number:'1.0-0' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-gray-700 font-medium">{{ 'ADMIN.DASHBOARD.TOTAL_APPLICATIONS' | translate }}</span>
+                      <span class="font-bold text-blue-600">{{ projectStatistics.totalApplications }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Quick Actions Card -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ 'ADMIN.DASHBOARD.QUICK_ACTIONS' | translate }}</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <button 
+                  (click)="navigateToUserManagement()"
+                  class="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                  <i class="fas fa-users text-2xl text-blue-600 mb-2"></i>
+                  <span class="text-sm font-medium text-blue-900">{{ 'ADMIN.DASHBOARD.MANAGE_USERS' | translate }}</span>
+                </button>
+                <button 
+                  (click)="navigateToProjectManagement()"
+                  class="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                  <i class="fas fa-project-diagram text-2xl text-green-600 mb-2"></i>
+                  <span class="text-sm font-medium text-green-900">{{ 'ADMIN.DASHBOARD.MANAGE_PROJECTS' | translate }}</span>
+                </button>
+                <button class="flex flex-col items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">
+                  <i class="fas fa-chart-bar text-2xl text-yellow-600 mb-2"></i>
+                  <span class="text-sm font-medium text-yellow-900">{{ 'ADMIN.DASHBOARD.VIEW_REPORTS' | translate }}</span>
+                </button>
+                <button class="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                  <i class="fas fa-cog text-2xl text-purple-600 mb-2"></i>
+                  <span class="text-sm font-medium text-purple-900">{{ 'ADMIN.DASHBOARD.SETTINGS' | translate }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ 'ADMIN.DASHBOARD.RECENT_ACTIVITIES' | translate }}</h3>
+              <div class="space-y-4 max-h-80 overflow-y-auto">
+                @for (activity of recentActivities; track activity.id) {
+                  <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                      <i [class]="getActivityIcon(activity.type)"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm text-gray-900">{{ activity.message }}</p>
+                      <p class="text-xs text-gray-500">{{ formatTimeAgo(activity.timestamp) }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Overview Charts Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- User Growth Chart -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                  <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                  {{ 'ADMIN.DASHBOARD.USER_GROWTH' | translate }}
+                </h3>
+                <div class="text-sm text-gray-500">
+                  <i class="fas fa-calendar mr-1"></i>
+                  Last 6 months
+                </div>
+              </div>
+              <div class="h-64 relative">
+                @if (userGrowthChartData.datasets.length > 0) {
+                  <canvas baseChart
+                          [data]="userGrowthChartData"
+                          [options]="userGrowthChartOptions"
+                          [type]="userGrowthChartType">
+                  </canvas>
+                } @else {
+                  <div class="h-full flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div class="text-center">
+                      <i class="fas fa-chart-line text-gray-400 text-3xl mb-2"></i>
+                      <p class="text-gray-500">Loading chart data...</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Project Status Distribution -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                  <i class="fas fa-chart-pie mr-2 text-green-600"></i>
+                  {{ 'ADMIN.DASHBOARD.PROJECT_STATUS' | translate }}
+                </h3>
+                <div class="text-sm text-gray-500">
+                  <i class="fas fa-database mr-1"></i>
+                  Current data
+                </div>
+              </div>
+              <div class="h-64 relative">
+                @if (projectStatusChartData.datasets.length > 0) {
+                  <canvas baseChart
+                          [data]="projectStatusChartData"
+                          [options]="projectStatusChartOptions"
+                          [type]="projectStatusChartType">
+                  </canvas>
+                } @else {
+                  <div class="h-full flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div class="text-center">
+                      <i class="fas fa-chart-pie text-gray-400 text-3xl mb-2"></i>
+                      <p class="text-gray-500">Loading chart data...</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </main>
+    </div>
+  </div>
+</div>

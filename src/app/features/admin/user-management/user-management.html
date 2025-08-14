@@ -1,0 +1,697 @@
+<div class="admin-user-management">
+  <div class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <app-admin-sidebar 
+      [isCollapsed]="isSidebarCollapsed"
+      [activeItem]="activeMenuItem"
+      (itemSelected)="onSidebarItemSelected($event)"
+      (toggleSidebar)="onSidebarToggle()">
+    </app-admin-sidebar>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Modern Header -->
+      <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ 'ADMIN.USER_MANAGEMENT.TITLE' | translate }}</h1>
+            <p class="text-gray-600 mt-1">{{ 'ADMIN.USER_MANAGEMENT.SUBTITLE' | translate }}</p>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex items-center space-x-3">
+            <button 
+              (click)="refreshData()"
+              [disabled]="isLoading"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+            >
+              <i class="fas fa-sync-alt mr-2" [class.animate-spin]="isLoading"></i>
+              {{ 'COMMON.REFRESH' | translate }}
+            </button>
+            
+            <button 
+              (click)="openAddUserModal()"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            >
+              <i class="fas fa-plus mr-2"></i>
+              {{ 'ADMIN.USER_MANAGEMENT.ADD_USER' | translate }}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+        @if (isLoading) {
+          <!-- Enhanced Loading State -->
+          <div class="flex flex-col items-center justify-center py-20">
+            <div class="relative">
+              <div class="animate-spin rounded-full h-16 w-16 border-4 border-purple-200"></div>
+              <div class="animate-spin rounded-full h-16 w-16 border-4 border-purple-600 border-t-transparent absolute top-0 left-0"></div>
+            </div>
+            <p class="mt-4 text-gray-600 text-lg">Loading user data...</p>
+            <p class="text-sm text-gray-400">{{ getCurrentTimeInfo() }}</p>
+          </div>
+        } @else {
+          
+          <!-- Enhanced Statistics Cards -->
+          @if (userStatistics) {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-blue-100 text-sm font-medium">Total Users</p>
+                    <p class="text-3xl font-bold">{{ userStatistics.totalUsers }}</p>
+                  </div>
+                  <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-users text-2xl"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-green-100 text-sm font-medium">Verified Users</p>
+                    <p class="text-3xl font-bold">{{ userStatistics.verifiedUsers }}</p>
+                  </div>
+                  <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-check-circle text-2xl"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-yellow-100 text-sm font-medium">Pending</p>
+                    <p class="text-3xl font-bold">{{ userStatistics.pendingVerification }}</p>
+                  </div>
+                  <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-clock text-2xl"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-purple-100 text-sm font-medium">Active This Month</p>
+                    <p class="text-3xl font-bold">{{ userStatistics.activeThisMonth }}</p>
+                  </div>
+                  <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-chart-line text-2xl"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Enhanced Filters and Search -->
+          <div class="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-filter mr-2 text-purple-600"></i>
+                Search & Filter Users
+              </h3>
+              <div class="text-sm text-gray-500">
+                Showing {{ users.length }} of {{ totalItems }} users
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <!-- Enhanced Search -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fas fa-search mr-1"></i>
+                  Search Users
+                </label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    [(ngModel)]="searchTerm"
+                    (input)="onSearch()"
+                    placeholder="Search by name, email, username..."
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  >
+                  <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                  @if (searchTerm) {
+                    <button 
+                      (click)="searchTerm = ''; onSearch()"
+                      class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Enhanced Role Filter -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fas fa-user-tag mr-1"></i>
+                  Filter by Role
+                </label>
+                <select
+                  [(ngModel)]="selectedRole"
+                  (change)="onRoleFilter()"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
+                  @for (role of roles; track role.value) {
+                    <option [value]="role.value">{{ role.label | translate }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Enhanced Status Filter -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fas fa-shield-alt mr-1"></i>
+                  Filter by Status
+                </label>
+                <select
+                  [(ngModel)]="selectedStatus"
+                  (change)="onStatusFilter()"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
+                  @for (status of statuses; track status.value) {
+                    <option [value]="status.value">{{ status.label | translate }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Clear Filters -->
+              <div class="flex items-end">
+                <button 
+                  (click)="clearFilters()"
+                  class="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center justify-center"
+                >
+                  <i class="fas fa-times mr-2"></i>
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enhanced Users Table -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <!-- Table Header -->
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-table mr-2 text-purple-600"></i>
+                User Management Table
+                <span class="ml-2 text-sm font-normal text-gray-500">({{ users.length }} users loaded)</span>
+              </h3>
+            </div>
+            
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="flex items-center space-x-1">
+                        <i class="fas fa-user"></i>
+                        <span>User Info</span>
+                      </div>
+                    </th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="flex items-center space-x-1">
+                        <i class="fas fa-user-tag"></i>
+                        <span>Role</span>
+                      </div>
+                    </th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="flex items-center space-x-1">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Status</span>
+                      </div>
+                    </th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="flex items-center space-x-1">
+                        <i class="fas fa-clock"></i>
+                        <span>Last Active</span>
+                      </div>
+                    </th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="flex items-center space-x-1">
+                        <i class="fas fa-calendar"></i>
+                        <span>Joined</span>
+                      </div>
+                    </th>
+                    <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="flex items-center justify-center space-x-1">
+                        <i class="fas fa-cogs"></i>
+                        <span>Actions</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  @for (user of paginatedUsers; track user.id) {
+                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                      <!-- User Info -->
+                      <td class="px-6 py-4">
+                        <div class="flex items-center">
+                          <div class="flex-shrink-0 h-12 w-12">
+                            @if (user.profilePictureUrl) {
+                              <img 
+                                class="h-12 w-12 rounded-full border-2 border-gray-200 shadow-sm" 
+                                [src]="user.profilePictureUrl" 
+                                [alt]="getFullName(user)"
+                              >
+                            } @else {
+                              <div class="h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center shadow-sm">
+                                <i class="fas fa-user text-white text-lg"></i>
+                              </div>
+                            }
+                          </div>
+                          <div class="ml-4">
+                            <div class="text-sm font-semibold text-gray-900">{{ getFullName(user) }}</div>
+                            <div class="text-sm text-gray-600">{{ user.email }}</div>
+                            <div class="text-xs text-gray-400 flex items-center mt-1">
+                              <i class="fas fa-at mr-1"></i>
+                              {{ user.username }}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- Role -->
+                      <td class="px-6 py-4">
+                        <span [class]="'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ' + getRoleBadgeClass(user.roles)">
+                          <i class="fas fa-circle mr-1.5" style="font-size: 6px;"></i>
+                          {{ getRoleLabel(user.roles) }}
+                        </span>
+                      </td>
+
+                      <!-- Status -->
+                      <td class="px-6 py-4">
+                        <span [class]="'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ' + getStatusBadgeClass(user)">
+                          @if (user.verified) {
+                            <i class="fas fa-check mr-1.5"></i>
+                          } @else {
+                            <i class="fas fa-clock mr-1.5"></i>
+                          }
+                          {{ getUserStatus(user) }}
+                        </span>
+                      </td>
+
+                      <!-- Last Active -->
+                      <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">{{ getLastActiveDisplay(user) }}</div>
+                        @if (user.lastActive) {
+                          <div class="text-xs text-gray-400">{{ adminUserService.formatDate(user.lastActive) }}</div>
+                        }
+                      </td>
+
+                      <!-- Joined Date -->
+                      <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">{{ getCreatedAtDisplay(user) }}</div>
+                      </td>
+
+                      <!-- ✅ ENHANCED ACTIONS COLUMN -->
+                      <td class="px-6 py-4">
+                        <div class="flex items-center justify-center space-x-2">
+                          <!-- View Button -->
+                          <button
+                            (click)="viewUser(user)"
+                            class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            title="View User Details"
+                          >
+                            <i class="fas fa-eye mr-1.5"></i>
+                            <span class="hidden sm:inline">View</span>
+                          </button>
+
+                          <!-- Edit Button -->
+                          <button
+                            (click)="openEditUserModal(user)"
+                            class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            title="Edit User"
+                          >
+                            <i class="fas fa-edit mr-1.5"></i>
+                            <span class="hidden sm:inline">Edit</span>
+                          </button>
+
+                          <!-- Verify Button (if not verified) -->
+                          @if (!user.verified) {
+                            <button
+                              (click)="markUserAsVerified(user)"
+                              class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              title="Mark as Verified"
+                            >
+                              <i class="fas fa-check-circle mr-1.5"></i>
+                              <span class="hidden sm:inline">Verify</span>
+                            </button>
+                          }
+
+                          <!-- Delete Button -->
+                          <button
+                            (click)="deleteUser(user)"
+                            class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            title="Delete User"
+                          >
+                            <i class="fas fa-trash mr-1.5"></i>
+                            <span class="hidden sm:inline">Delete</span>
+                          </button>
+
+                          <!-- More Options Dropdown -->
+                          <div class="relative">
+                            <button
+                              class="inline-flex items-center px-2 py-2 text-xs font-medium rounded-lg text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                              title="More Options"
+                            >
+                              <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- No Users Found -->
+            @if (users.length === 0) {
+              <div class="text-center py-12">
+                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <i class="fas fa-users text-gray-400 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No users found</h3>
+                <p class="text-gray-500 mb-4">No users match your current search criteria.</p>
+                <button 
+                  (click)="clearFilters()"
+                  class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <i class="fas fa-times mr-2"></i>
+                  Clear Filters
+                </button>
+              </div>
+            }
+
+            <!-- Enhanced Pagination -->
+            @if (totalPages > 1) {
+              <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                <!-- Mobile Pagination -->
+                <div class="flex-1 flex justify-between sm:hidden">
+                  <button
+                    (click)="onPageChange(currentPage - 1)"
+                    [disabled]="currentPage === 0"
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <i class="fas fa-chevron-left mr-2"></i>
+                    Previous
+                  </button>
+                  <button
+                    (click)="onPageChange(currentPage + 1)"
+                    [disabled]="currentPage === totalPages - 1"
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                    <i class="fas fa-chevron-right ml-2"></i>
+                  </button>
+                </div>
+
+                <!-- Desktop Pagination -->
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p class="text-sm text-gray-700 flex items-center">
+                      <i class="fas fa-info-circle mr-2 text-gray-400"></i>
+                      Showing
+                      <span class="font-medium mx-1">{{ currentPage * itemsPerPage + 1 }}</span>
+                      to
+                      <span class="font-medium mx-1">{{ getEndItem() }}</span>
+                      of
+                      <span class="font-medium mx-1">{{ totalItems }}</span>
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px">
+                      <!-- Previous Button -->
+                      <button
+                        (click)="onPageChange(currentPage - 1)"
+                        [disabled]="currentPage === 0"
+                        class="relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <i class="fas fa-chevron-left"></i>
+                      </button>
+
+                      <!-- Page Numbers -->
+                      @for (page of [].constructor(Math.min(totalPages, 10)); track $index; let i = $index) {
+                        <button
+                          (click)="onPageChange(i)"
+                          [class]="'relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ' + 
+                                  (currentPage === i ? 'z-10 bg-purple-50 border-purple-500 text-purple-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50')"
+                        >
+                          {{ i + 1 }}
+                        </button>
+                      }
+
+                      <!-- Next Button -->
+                      <button
+                        (click)="onPageChange(currentPage + 1)"
+                        [disabled]="currentPage === totalPages - 1"
+                        class="relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <i class="fas fa-chevron-right"></i>
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </main>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  @if (showAddUserModal) {
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" (click)="closeAddUserModal()"></div>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <form (ngSubmit)="onAddUser()" #addUserForm="ngForm">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+              <div class="sm:flex sm:items-start">
+                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                  <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                    {{ 'ADMIN.USER_MANAGEMENT.ADD_USER' | translate }}
+                  </h3>
+                  
+                  <div class="grid grid-cols-1 gap-4">
+                    <!-- Username -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="newUser.username"
+                        name="username"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter username">
+                    </div>
+                    
+                    <!-- Email -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        [(ngModel)]="newUser.email"
+                        name="email"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter email address">
+                    </div>
+                    
+                    <!-- Password -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input
+                        type="password"
+                        [(ngModel)]="newUser.password"
+                        name="password"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter password">
+                    </div>
+                    
+                    <!-- First Name -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="newUser.firstName"
+                        name="firstName"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter first name">
+                    </div>
+                    
+                    <!-- Last Name -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="newUser.lastName"
+                        name="lastName"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter last name">
+                    </div>
+                    
+                    <!-- Role -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                      <select
+                        [(ngModel)]="selectedNewUserRole"
+                        name="role"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">Select a role</option>
+                        <option value="ROLE_CLIENT">Client</option>
+                        <option value="ROLE_FREELANCER">Freelancer</option>
+                        <option value="ROLE_SERVICE_COMPANY">Service Company</option>
+                        <option value="ROLE_ADMIN">Administrator</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button
+                type="submit"
+                [disabled]="!addUserForm.form.valid || isAddingUser"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                @if (isAddingUser) {
+                  <i class="fas fa-spinner fa-spin mr-2"></i>
+                }
+                {{ 'COMMON.CREATE' | translate }}
+              </button>
+              <button
+                type="button"
+                (click)="closeAddUserModal()"
+                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                {{ 'COMMON.CANCEL' | translate }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Edit User Modal -->
+  @if (showEditUserModal && selectedUser) {
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" (click)="closeEditUserModal()"></div>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <form (ngSubmit)="onEditUser()" #editUserForm="ngForm">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+              <div class="sm:flex sm:items-start">
+                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                  <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                    Edit User: {{ selectedUser.username }}
+                  </h3>
+                  
+                  <div class="grid grid-cols-1 gap-4">
+                    <!-- Email -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        [(ngModel)]="editUserData.email"
+                        name="email"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter email address">
+                    </div>
+                    
+                    <!-- First Name -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="editUserData.firstName"
+                        name="firstName"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter first name">
+                    </div>
+                    
+                    <!-- Last Name -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="editUserData.lastName"
+                        name="lastName"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter last name">
+                    </div>
+                    
+                    <!-- Location -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="editUserData.location"
+                        name="location"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter location">
+                    </div>
+                    
+                    <!-- Verification Status -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Verification Status</label>
+                      <select
+                        [(ngModel)]="editUserData.verificationStatus"
+                        name="verificationStatus"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="PENDING">Pending</option>
+                        <option value="VERIFIED">Verified</option>
+                        <option value="REJECTED">Rejected</option>
+                      </select>
+                    </div>
+                    
+                    <!-- Verified Checkbox -->
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="editUserData.verified"
+                        name="verified"
+                        id="verified"
+                        class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                      <label for="verified" class="ml-2 block text-sm text-gray-900">Verified User</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button
+                type="submit"
+                [disabled]="isEditingUser"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                @if (isEditingUser) {
+                  <i class="fas fa-spinner fa-spin mr-2"></i>
+                }
+                {{ 'COMMON.UPDATE' | translate }}
+              </button>
+              <button
+                type="button"
+                (click)="closeEditUserModal()"
+                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                {{ 'COMMON.CANCEL' | translate }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+</div>

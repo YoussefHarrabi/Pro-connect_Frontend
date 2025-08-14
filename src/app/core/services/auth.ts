@@ -123,11 +123,11 @@ export class AuthService {
   getRedirectUrlByRole(role: string): string {
   switch (role) {
     case 'ROLE_CLIENT':
-      return '/talent-discovery'; // Clients go to talent discovery to find freelancers/companies
+      return '/client-dashboard'; // Clients go to their dashboard to manage projects
     case 'ROLE_FREELANCER':
-      return '/project-discovery'; // Freelancers go to project discovery to find projects
+      return '/freelancer-dashboard'; // Freelancers go to their dashboard to view ongoing projects
     case 'ROLE_SERVICE_COMPANY':
-      return '/project-discovery'; // Service companies also go to project discovery to find projects
+      return '/company-dashboard'; // Service companies go to their dashboard to manage projects
     case 'ROLE_ADMIN':
       return '/admin-dashboard';
     default:

@@ -1,27 +1,51 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { Subject, takeUntil } from 'rxjs';
 import { FileManagerComponent } from './components/file-manager/file-manager';
 import { TaskBoardComponent } from './components/task-board/task-board';
+import { WorkspaceChatComponent } from './components/workspace-chat/workspace-chat';
 import { SharedNavbar, NavbarConfig } from '../../shared/components/shared-navbar/shared-navbar';
 import { SharedFooter } from '../../shared/components/shared-footer/shared-footer';
 
-// Import workspace components
+// Import services and DTOs
+import { 
+  ProjectService, 
+  ProjectDto, 
+  ProjectStatus 
+} from '../../shared/services/project.service';
+import { 
+  TaskService, 
+  TaskDto, 
+  TaskCreateRequest, 
+  TaskStatus,
+  TaskPriority
+} from '../../shared/services/task.service';
+import { 
+  FileAttachmentService, 
+  FileAttachmentDto 
+} from '../../shared/services/file-attachment.service';
 
+// ✅ Only keep workspace-specific interfaces (not duplicated in services)
 interface Task {
   id: string;
   title: string;
   description: string;
   status: 'todo' | 'inprogress' | 'inreview' | 'done';
   assignee: string;
-  priority: 'low' | 'medium' | 'high';
-  dueDate: Date;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  dueDate: Date | null;
+  estimatedHours: number | null;
+  actualHours: number | null;
+  notes: string;
   comments: Comment[];
   attachments: FileAttachment[];
   createdAt: Date;
   updatedAt: Date;
+  isOverdue: boolean;
+  isCompleted: boolean;
 }
 
 interface Comment {
@@ -43,6 +67,16 @@ interface FileAttachment {
   uploadedAt: Date;
 }
 
+interface ChatMessage {
+  id: string;
+  sender: string;
+  senderRole: 'client' | 'freelancer';
+  content: string;
+  timestamp: Date;
+  attachments?: FileAttachment[];
+  isRead: boolean;
+}
+
 interface ProjectWorkspace {
   id: string;
   projectTitle: string;
@@ -54,6 +88,7 @@ interface ProjectWorkspace {
   budget: number;
   description: string;
   tasks: Task[];
+  chatMessages: ChatMessage[];
   files: FileAttachment[];
 }
 
@@ -66,6 +101,7 @@ interface ProjectWorkspace {
     ReactiveFormsModule,
     TranslateModule,
     TaskBoardComponent,
+    WorkspaceChatComponent,
     FileManagerComponent,
     SharedNavbar,
     SharedFooter
@@ -73,10 +109,61 @@ interface ProjectWorkspace {
   templateUrl: './workspace.html',
   styleUrls: ['./workspace.scss']
 })
-export class WorkspaceComponent implements OnInit {
+export class WorkspaceComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  // Project data
+  projectId!: number;
+  project: ProjectDto | null = null;
+  
+  // Component state
+  activeTab: 'overview' | 'tasks' | 'chat' | 'files' = 'overview';
+  isLoading = true;
+  currentUserRole: 'client' | 'freelancer' = 'client';
+  
+  // Data arrays - real backend data
+  backendTasks: TaskDto[] = [];
+  backendFiles: FileAttachmentDto[] = [];
+  
+  // Mock data for chat (until chat service is implemented)
+  mockChatMessages: ChatMessage[] = [
+    {
+      id: 'msg-001',
+      sender: 'John Smith',
+      senderRole: 'client',
+      content: 'Hi! Excited to start working on this project!',
+      timestamp: new Date('2024-01-15T09:00:00'),
+      isRead: true
+    },
+    {
+      id: 'msg-002',
+      sender: 'Sarah Johnson',
+      senderRole: 'freelancer',
+      content: 'Hello! Thank you for choosing me. I\'ll start with the tasks as discussed.',
+      timestamp: new Date('2024-01-15T09:15:00'),
+      isRead: true
+    }
+  ];
+
+  // ✅ Workspace object mapped from real data
+  workspace: ProjectWorkspace = {
+    id: '',
+    projectTitle: '',
+    clientName: '',
+    freelancerName: '',
+    status: 'active',
+    startDate: new Date(),
+    deadline: new Date(),
+    budget: 0,
+    description: '',
+    tasks: [],
+    chatMessages: [],
+    files: []
+  };
+
   // Shared navbar configuration
   sharedNavbarConfig: NavbarConfig = {
-    title: 'Pro-Connect',
+    title: 'Pro-Connect Workspace',
     showLanguageToggle: true,
     showProfileLink: true,
     showLogoutButton: true,
@@ -89,162 +176,46 @@ export class WorkspaceComponent implements OnInit {
     ]
   };
 
-  navbarConfig = {
-    showBackButton: true,
-    backRoute: '/client-dashboard',
-    customButtons: [
-      {
-        label: 'workspace.navbar.overview',
-        action: () => this.setActiveTab('overview')
-      },
-      {
-        label: 'workspace.navbar.tasks',
-        action: () => this.setActiveTab('tasks')
-      },
-      {
-        label: 'workspace.navbar.files',
-        action: () => this.setActiveTab('files')
-      }
-    ]
-  };
-
-  activeTab: 'overview' | 'tasks' | 'files' = 'overview';
-  currentUserRole: 'client' | 'freelancer' = 'client'; // Mock current user role
-  
-  // Mock workspace data
-  workspace: ProjectWorkspace = {
-    id: 'ws-001',
-    projectTitle: 'E-commerce Website Development',
-    clientName: 'John Smith',
-    freelancerName: 'Sarah Johnson',
-    status: 'active',
-    startDate: new Date('2024-01-15'),
-    deadline: new Date('2024-03-15'),
-    budget: 5000,
-    description: 'Development of a modern e-commerce website with shopping cart, payment integration, and admin panel.',
-    tasks: [
-      {
-        id: 'task-001',
-        title: 'Homepage Design',
-        description: 'Create responsive homepage design with modern UI',
-        status: 'done',
-        assignee: 'Sarah Johnson',
-        priority: 'high',
-        dueDate: new Date('2024-01-25'),
-        comments: [
-          {
-            id: 'comment-001',
-            author: 'John Smith',
-            authorRole: 'client',
-            content: 'Looks great! Please add the company logo in the header.',
-            timestamp: new Date('2024-01-20T10:30:00')
-          },
-          {
-            id: 'comment-002',
-            author: 'Sarah Johnson',
-            authorRole: 'freelancer',
-            content: 'Logo has been added. Ready for review.',
-            timestamp: new Date('2024-01-21T14:15:00')
-          }
-        ],
-        attachments: [
-          {
-            id: 'file-001',
-            name: 'homepage-mockup.png',
-            size: 1024000,
-            type: 'image/png',
-            url: '/assets/mock-files/homepage-mockup.png',
-            uploadedBy: 'Sarah Johnson',
-            uploadedAt: new Date('2024-01-20T09:00:00')
-          }
-        ],
-        createdAt: new Date('2024-01-15T08:00:00'),
-        updatedAt: new Date('2024-01-21T14:15:00')
-      },
-      {
-        id: 'task-002',
-        title: 'Product Catalog Implementation',
-        description: 'Implement product listing and detail pages',
-        status: 'inprogress',
-        assignee: 'Sarah Johnson',
-        priority: 'high',
-        dueDate: new Date('2024-02-05'),
-        comments: [],
-        attachments: [],
-        createdAt: new Date('2024-01-22T10:00:00'),
-        updatedAt: new Date('2024-01-25T16:30:00')
-      },
-      {
-        id: 'task-003',
-        title: 'Payment Gateway Integration',
-        description: 'Integrate Stripe payment system',
-        status: 'todo',
-        assignee: 'Sarah Johnson',
-        priority: 'medium',
-        dueDate: new Date('2024-02-15'),
-        comments: [],
-        attachments: [],
-        createdAt: new Date('2024-01-25T12:00:00'),
-        updatedAt: new Date('2024-01-25T12:00:00')
-      },
-      {
-        id: 'task-004',
-        title: 'Admin Panel Development',
-        description: 'Create admin dashboard for managing products and orders',
-        status: 'inreview',
-        assignee: 'Sarah Johnson',
-        priority: 'medium',
-        dueDate: new Date('2024-02-20'),
-        comments: [
-          {
-            id: 'comment-003',
-            author: 'Sarah Johnson',
-            authorRole: 'freelancer',
-            content: 'Admin panel is ready for testing. Please check the user management section.',
-            timestamp: new Date('2024-01-28T11:00:00')
-          }
-        ],
-        attachments: [],
-        createdAt: new Date('2024-01-26T09:00:00'),
-        updatedAt: new Date('2024-01-28T11:00:00')
-      }
-    ],
-    files: [
-      {
-        id: 'file-001',
-        name: 'homepage-mockup.png',
-        size: 1024000,
-        type: 'image/png',
-        url: '/assets/mock-files/homepage-mockup.png',
-        uploadedBy: 'Sarah Johnson',
-        uploadedAt: new Date('2024-01-20T09:00:00')
-      },
-      {
-        id: 'file-002',
-        name: 'project-requirements.pdf',
-        size: 2048000,
-        type: 'application/pdf',
-        url: '/assets/mock-files/project-requirements.pdf',
-        uploadedBy: 'John Smith',
-        uploadedAt: new Date('2024-01-15T10:00:00')
-      },
-      {
-        id: 'file-003',
-        name: 'brand-assets.zip',
-        size: 5120000,
-        type: 'application/zip',
-        url: '/assets/mock-files/brand-assets.zip',
-        uploadedBy: 'John Smith',
-        uploadedAt: new Date('2024-01-16T14:30:00')
-      }
-    ]
-  };
-
   // Forms
-  projectCompletionForm: FormGroup;
+  projectCompletionForm!: FormGroup;
   showCompletionModal = false;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private fb: FormBuilder,
+    private projectService: ProjectService,
+    private taskService: TaskService,
+    private fileService: FileAttachmentService
+  ) {
+    this.initializeForms();
+  }
+
+  ngOnInit(): void {
+    console.log('🚀 WorkspaceComponent: ngOnInit started');
+    console.log('👤 Current user:', this.getCurrentUsername());
+    
+    const projectIdParam = this.route.snapshot.paramMap.get('id');
+    console.log('📋 Project ID from route:', projectIdParam);
+    
+    if (!projectIdParam || isNaN(Number(projectIdParam))) {
+      console.error('❌ Invalid project ID:', projectIdParam);
+      this.router.navigate(['/client-dashboard']);
+      return;
+    }
+    
+    this.projectId = Number(projectIdParam);
+    console.log('✅ Project ID set to:', this.projectId);
+    
+    this.loadWorkspaceData();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private initializeForms(): void {
     this.projectCompletionForm = this.fb.group({
       completionNotes: ['', Validators.required],
       rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
@@ -252,23 +223,362 @@ export class WorkspaceComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    // Initialize component
+  // ✅ Load real data from backend services
+  private loadWorkspaceData(): void {
+    console.log('🔄 Starting to load workspace data for project:', this.projectId);
+    this.isLoading = true;
+    
+    // Load project first
+    this.projectService.getProjectById(this.projectId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (project) => {
+          console.log('✅ Project loaded successfully:', project?.title);
+          this.project = project;
+          
+          if (!project) {
+            console.error('❌ Project not found');
+            this.router.navigate(['/client-dashboard']);
+            return;
+          }
+          
+          this.mapProjectToWorkspace(project);
+          this.determineUserRole();
+          this.updateNavbarTitle();
+          
+          // Load tasks and files
+          this.loadTasksAndFiles();
+        },
+        error: (error) => {
+          console.error('❌ Error loading project:', error);
+          this.isLoading = false;
+          this.router.navigate(['/client-dashboard']);
+        }
+      });
   }
 
+  private loadTasksAndFiles(): void {
+    console.log('🔄 Loading tasks and files...');
+    
+    // Load tasks
+    this.taskService.getProjectTasks(this.projectId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (tasks) => {
+          console.log('✅ Tasks loaded:', tasks?.length || 0);
+          console.log('📋 Task details:', tasks);
+          this.backendTasks = tasks || [];
+          this.mapTasksToWorkspace();
+          this.checkIfLoadingComplete();
+        },
+        error: (error) => {
+          console.error('❌ Error loading tasks:', error);
+          this.backendTasks = [];
+          this.mapTasksToWorkspace();
+          this.checkIfLoadingComplete();
+        }
+      });
+    
+    // Load files
+    this.fileService.getProjectFiles(this.projectId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (files) => {
+          console.log('✅ Files loaded:', files?.length || 0);
+          this.backendFiles = files || [];
+          this.mapFilesToWorkspace();
+          this.checkIfLoadingComplete();
+        },
+        error: (error) => {
+          console.error('❌ Error loading files (expected if not implemented):', error);
+          this.backendFiles = [];
+          this.mapFilesToWorkspace();
+          this.checkIfLoadingComplete();
+        }
+      });
+  }
+
+  private checkIfLoadingComplete(): void {
+    if (this.backendTasks !== undefined && this.backendFiles !== undefined) {
+      console.log('✅ All data loaded');
+      this.workspace.chatMessages = this.mockChatMessages; // Use mock chat for now
+      this.isLoading = false;
+      console.log('✅ Loading complete! isLoading set to false');
+    }
+  }
+
+  // ✅ Map backend project data to workspace
+  private mapProjectToWorkspace(project: ProjectDto): void {
+    this.workspace.id = project.id.toString();
+    this.workspace.projectTitle = project.title;
+    this.workspace.clientName = project.clientUsername || 'Client';
+    this.workspace.freelancerName = project.assignedTalentUsername || 'Not assigned';
+    this.workspace.status = this.mapProjectStatus(project.status);
+    this.workspace.startDate = new Date(project.createdAt);
+    this.workspace.deadline = project.deadline ? new Date(project.deadline) : new Date();
+    this.workspace.budget = project.budgetMax || 0;
+    this.workspace.description = project.description;
+    
+    console.log('🏗️ Mapped project to workspace:', {
+      clientName: this.workspace.clientName,
+      freelancerName: this.workspace.freelancerName,
+      currentUser: this.getCurrentUsername()
+    });
+  }
+
+  // ✅ Map backend tasks to workspace tasks
+  private mapTasksToWorkspace(): void {
+    this.workspace.tasks = this.backendTasks.map(task => this.mapTaskToWorkspaceTask(task));
+    console.log('📋 Mapped tasks to workspace:', this.workspace.tasks.length);
+  }
+
+  // ✅ Map backend files to workspace files
+  private mapFilesToWorkspace(): void {
+    this.workspace.files = this.backendFiles.map(file => this.mapFileToWorkspaceFile(file));
+  }
+
+  // ✅ Map single backend task to workspace task - Using service DTOs
+  private mapTaskToWorkspaceTask(task: TaskDto): Task {
+    return {
+      id: task.id.toString(),
+      title: task.title,
+      description: task.description || '',
+      status: this.mapTaskStatus(task.status),
+      assignee: task.assigneeUsername || 'Unassigned',
+      priority: this.mapTaskPriority(task.priority),
+      dueDate: task.dueDate ? new Date(task.dueDate) : null,
+      estimatedHours: task.estimatedHours || null,
+      actualHours: task.actualHours || null,
+      notes: task.notes || '',
+      comments: [], // Will be loaded separately if needed
+      attachments: [], // Will be loaded separately if needed
+      createdAt: new Date(task.createdAt),
+      updatedAt: new Date(task.updatedAt),
+      isOverdue: task.isOverdue || false,
+      isCompleted: task.isCompleted || false
+    };
+  }
+
+  // ✅ Map single backend file to workspace file
+  private mapFileToWorkspaceFile(file: FileAttachmentDto): FileAttachment {
+    return {
+      id: file.id.toString(),
+      name: file.fileName,
+      size: file.size,
+      type: file.fileType,
+      url: file.downloadUrl,
+      uploadedBy: file.uploaderUsername,
+      uploadedAt: new Date(file.createdAt)
+    };
+  }
+
+  // ✅ Mapping helper methods - Using service enums
+  private mapProjectStatus(status: ProjectStatus): 'active' | 'completed' | 'archived' {
+    switch (status) {
+      case ProjectStatus.IN_PROGRESS:
+        return 'active';
+      case ProjectStatus.COMPLETED:
+        return 'completed';
+      case ProjectStatus.CLOSED:
+        return 'archived';
+      default:
+        return 'active';
+    }
+  }
+
+  private mapTaskStatus(status: TaskStatus): 'todo' | 'inprogress' | 'inreview' | 'done' {
+    switch (status) {
+      case TaskStatus.TO_DO:
+        return 'todo';
+      case TaskStatus.IN_PROGRESS:
+        return 'inprogress';
+      case TaskStatus.IN_REVIEW:
+        return 'inreview';
+      case TaskStatus.DONE:
+        return 'done';
+      default:
+        return 'todo';
+    }
+  }
+
+  // ✅ Updated to handle URGENT priority from service enum
+  private mapTaskPriority(priority: TaskPriority | null): 'low' | 'medium' | 'high' | 'urgent' {
+    if (!priority) return 'medium';
+    switch (priority) {
+      case TaskPriority.LOW:
+        return 'low';
+      case TaskPriority.MEDIUM:
+        return 'medium';
+      case TaskPriority.HIGH:
+        return 'high';
+      case TaskPriority.URGENT:
+        return 'urgent';
+      default:
+        return 'medium';
+    }
+  }
+
+  private mapWorkspaceTaskStatusToBackend(status: 'todo' | 'inprogress' | 'inreview' | 'done'): TaskStatus {
+    switch (status) {
+      case 'todo':
+        return TaskStatus.TO_DO;
+      case 'inprogress':
+        return TaskStatus.IN_PROGRESS;
+      case 'inreview':
+        return TaskStatus.IN_REVIEW;
+      case 'done':
+        return TaskStatus.DONE;
+      default:
+        return TaskStatus.TO_DO;
+    }
+  }
+
+  private determineUserRole(): void {
+    if (this.project) {
+      const currentUser = this.getCurrentUsername();
+      this.currentUserRole = this.project.clientUsername === currentUser ? 'client' : 'freelancer';
+      console.log('✅ User role determined:', this.currentUserRole);
+      console.log('📋 Project client:', this.project.clientUsername);
+      console.log('📋 Project freelancer:', this.project.assignedTalentUsername);
+      console.log('👤 Current user:', currentUser);
+    }
+  }
+
+  public getCurrentUsername(): string {
+    const token = localStorage.getItem('auth-token');
+    if (!token) return '';
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.sub || payload.username || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  private updateNavbarTitle(): void {
+    if (this.project) {
+      this.sharedNavbarConfig.title = `${this.project.title} - Workspace`;
+      console.log('✅ Navbar title updated');
+    }
+  }
+
+  // ✅ Component methods
   setActiveTab(tab: string): void {
-    this.activeTab = tab as 'overview' | 'tasks' | 'files';
+    this.activeTab = tab as 'overview' | 'tasks' | 'chat' | 'files';
   }
 
   getTasksByStatus(status: string): Task[] {
     return this.workspace.tasks.filter(task => task.status === status);
   }
 
-  getProjectProgress(): number {
-    const completedTasks = this.workspace.tasks.filter(task => task.status === 'done').length;
-    const totalTasks = this.workspace.tasks.length;
-    return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  getUnreadMessagesCount(): number {
+    return this.workspace.chatMessages.filter(msg => !msg.isRead).length;
   }
+
+// ✅ Updated progress calculation based on estimated hours of completed tasks
+getProjectProgress(): number {
+  if (!this.workspace.tasks || this.workspace.tasks.length === 0) {
+    return 0;
+  }
+
+  // ✅ Calculate total estimated hours for all tasks
+  const totalEstimatedHours = this.workspace.tasks.reduce((sum, task) => {
+    return sum + (task.estimatedHours || 0);
+  }, 0);
+
+  // ✅ Calculate estimated hours for completed tasks only
+  const completedTasks = this.workspace.tasks.filter(task => task.status === 'done');
+  const completedEstimatedHours = completedTasks.reduce((sum, task) => {
+    return sum + (task.estimatedHours || 0);
+  }, 0);
+
+  console.log(`📊 Workspace Progress Calculation:`);
+  console.log(`  - Total tasks: ${this.workspace.tasks.length}`);
+  console.log(`  - Completed tasks: ${completedTasks.length}`);
+  console.log(`  - Total estimated hours: ${totalEstimatedHours}h`);
+  console.log(`  - Completed estimated hours: ${completedEstimatedHours}h`);
+
+  // ✅ Log individual task details for debugging
+  this.workspace.tasks.forEach(task => {
+    console.log(`    - "${task.title}": ${task.estimatedHours || 0}h (${task.status}) ${task.status === 'done' ? '✅' : '❌'}`);
+  });
+
+  // ✅ Apply your exact formula: (completedEstimatedHours * 100) / totalEstimatedHours
+  if (totalEstimatedHours > 0) {
+    const progress = Math.round((completedEstimatedHours * 100) / totalEstimatedHours);
+    console.log(`📊 Progress formula: (${completedEstimatedHours} × 100) ÷ ${totalEstimatedHours} = ${progress}%`);
+    return progress;
+  } else {
+    // Fallback to task count if no estimated hours
+    const taskProgress = Math.round((completedTasks.length / this.workspace.tasks.length) * 100);
+    console.log(`📊 No estimated hours found, using task count: ${completedTasks.length}/${this.workspace.tasks.length} = ${taskProgress}%`);
+    return taskProgress;
+  }
+}
+
+// ✅ Additional helper method to get detailed progress info
+getProgressDetails(): any {
+  if (!this.workspace.tasks || this.workspace.tasks.length === 0) {
+    return {
+      totalTasks: 0,
+      completedTasks: 0,
+      totalEstimatedHours: 0,
+      completedEstimatedHours: 0,
+      formula: 'No tasks available',
+      calculation: 'N/A',
+      percentage: 0
+    };
+  }
+
+  const totalEstimatedHours = this.workspace.tasks.reduce((sum, task) => sum + (task.estimatedHours || 0), 0);
+  const completedTasks = this.workspace.tasks.filter(task => task.status === 'done');
+  const completedEstimatedHours = completedTasks.reduce((sum, task) => sum + (task.estimatedHours || 0), 0);
+  const progress = this.getProjectProgress();
+
+  return {
+    totalTasks: this.workspace.tasks.length,
+    completedTasks: completedTasks.length,
+    totalEstimatedHours,
+    completedEstimatedHours,
+    formula: totalEstimatedHours > 0 ? 
+      '(Completed Estimated Hours × 100) ÷ Total Estimated Hours' : 
+      'Task Count (no time estimates)',
+    calculation: totalEstimatedHours > 0 ? 
+      `(${completedEstimatedHours} × 100) ÷ ${totalEstimatedHours} = ${progress}%` :
+      `${completedTasks.length}/${this.workspace.tasks.length} tasks = ${progress}%`,
+    percentage: progress
+  };
+}
+
+// ✅ Get progress color based on percentage
+getProgressColor(): string {
+  const progress = this.getProjectProgress();
+  if (progress >= 80) return 'bg-green-600';
+  if (progress >= 60) return 'bg-blue-600';
+  if (progress >= 40) return 'bg-yellow-600';
+  if (progress >= 20) return 'bg-orange-500';
+  return 'bg-red-500';
+}
+
+// ✅ Get efficiency indicator
+getProjectEfficiency(): string {
+  const details = this.getProgressDetails();
+  
+  if (details.totalEstimatedHours === 0) return 'No time estimates';
+  
+  // Calculate actual hours spent
+  const actualHoursSpent = this.workspace.tasks.reduce((sum, task) => sum + (task.actualHours || 0), 0);
+  
+  if (actualHoursSpent === 0) return 'Not started';
+  
+  const efficiency = (details.completedEstimatedHours / actualHoursSpent) * 100;
+  if (efficiency > 120) return 'Highly efficient';
+  if (efficiency > 100) return 'Ahead of estimate';
+  if (efficiency > 80) return 'On track';
+  if (efficiency > 60) return 'Slightly behind';
+  return 'Needs attention';
+}
 
   openCompletionModal(): void {
     this.showCompletionModal = true;
@@ -281,18 +591,13 @@ export class WorkspaceComponent implements OnInit {
 
   markProjectComplete(): void {
     if (this.projectCompletionForm.valid) {
-      // Mock completion logic
-      this.workspace.status = 'completed';
-      console.log('Project marked as complete:', this.projectCompletionForm.value);
+      console.log('Project completion data:', this.projectCompletionForm.value);
       this.closeCompletionModal();
-      
-      // Show success message or redirect
-      alert('Project has been marked as complete! The workspace has been archived and the review process has been initiated.');
+      alert('Project completion feature will be implemented with the backend API.');
     }
   }
 
   canCompleteProject(): boolean {
-    // Only client can complete the project and all tasks should be done
     return this.currentUserRole === 'client' && 
            this.workspace.status === 'active' &&
            this.workspace.tasks.every(task => task.status === 'done');
@@ -315,8 +620,10 @@ export class WorkspaceComponent implements OnInit {
     }
   }
 
+  // ✅ Updated priority colors to include urgent
   getPriorityColor(priority: string): string {
     switch (priority) {
+      case 'urgent': return 'text-red-700 bg-red-200';
       case 'high': return 'text-red-600 bg-red-100';
       case 'medium': return 'text-yellow-600 bg-yellow-100';
       case 'low': return 'text-green-600 bg-green-100';
@@ -324,7 +631,8 @@ export class WorkspaceComponent implements OnInit {
     }
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: Date | string | null): string {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
   }
 
@@ -336,36 +644,147 @@ export class WorkspaceComponent implements OnInit {
     return Math.max(0, daysDiff);
   }
 
-  // Event handlers for child components
+  // ✅ Event handlers for child components
   onTaskUpdated(task: Task): void {
-    const index = this.workspace.tasks.findIndex(t => t.id === task.id);
-    if (index !== -1) {
-      this.workspace.tasks[index] = task;
+    console.log('🔄 Task updated:', task);
+    
+    const backendStatus = this.mapWorkspaceTaskStatusToBackend(task.status);
+    
+    this.taskService.updateTaskStatus(Number(task.id), backendStatus)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedTask) => {
+          console.log('✅ Task updated in backend:', updatedTask);
+          const index = this.backendTasks.findIndex(t => t.id === Number(task.id));
+          if (index !== -1) {
+            this.backendTasks[index] = updatedTask;
+            this.mapTasksToWorkspace();
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error updating task:', error);
+          this.loadTasksAndFiles();
+        }
+      });
+  }
+
+  // ✅ Updated task creation with proper assignee handling
+ onTaskCreated(taskData: any): void {
+  console.log('📝 Creating new task from TaskBoard:', taskData);
+  console.log('🏗️ Current project freelancer:', this.workspace.freelancerName);
+  console.log('👤 Current user:', this.getCurrentUsername());
+  
+  // ✅ Auto-assign to project's freelancer if no specific assignee provided
+  let assigneeUsername = null;
+  
+  if (taskData.assignee && taskData.assignee !== 'Unassigned') {
+    assigneeUsername = taskData.assignee;
+    console.log('📋 Using specified assignee:', assigneeUsername);
+  } else if (this.workspace.freelancerName && this.workspace.freelancerName !== 'Not assigned') {
+    assigneeUsername = this.workspace.freelancerName;
+    console.log('📋 Auto-assigning to project freelancer:', assigneeUsername);
+  } else {
+    console.log('📋 No assignee specified and no project freelancer available');
+  }
+  
+  // ✅ Create the request with ALL fields properly mapped
+  const createRequest: TaskCreateRequest = {
+    title: taskData.title || 'New Task',
+    description: taskData.description || '',
+    priority: this.mapWorkspacePriorityToBackend(taskData.priority || 'MEDIUM'),
+    dueDate: taskData.dueDate ? this.formatDateForBackend(taskData.dueDate) : undefined,
+    estimatedHours: taskData.estimatedHours || null,
+    notes: taskData.notes || '',
+    assigneeUsername: assigneeUsername || null
+  };
+  
+  // ✅ Enhanced logging to debug what's being sent
+  console.log('📝 Sending to backend:', createRequest);
+  console.log('📝 Request details:');
+  console.log('  - Title:', createRequest.title);
+  console.log('  - Description:', createRequest.description);
+  console.log('  - Priority:', createRequest.priority);
+  console.log('  - Due Date:', createRequest.dueDate);
+  console.log('  - Estimated Hours:', createRequest.estimatedHours);
+  console.log('  - Notes:', createRequest.notes);
+  console.log('  - Assignee Username:', createRequest.assigneeUsername);
+  
+  this.taskService.createTask(this.projectId, createRequest)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (createdTask) => {
+        console.log('✅ Task created in backend:', createdTask);
+        this.backendTasks.push(createdTask);
+        this.mapTasksToWorkspace();
+      },
+      error: (error) => {
+        console.error('❌ Error creating task:', error);
+        alert('Error creating task: ' + (error.message || error));
+      }
+    });
+}
+
+  // ✅ Helper methods using service enums
+  private formatDateForBackend(date: Date | string | null): string | undefined {
+    if (!date) return undefined;
+    
+    if (typeof date === 'string') {
+      return date;
+    }
+    
+    if (date instanceof Date) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    return undefined;
+  }
+
+  private mapWorkspacePriorityToBackend(priority: string): TaskPriority {
+    switch (priority.toUpperCase()) {
+      case 'LOW':
+        return TaskPriority.LOW;
+      case 'MEDIUM':
+        return TaskPriority.MEDIUM;
+      case 'HIGH':
+        return TaskPriority.HIGH;
+      case 'URGENT':
+        return TaskPriority.URGENT;
+      default:
+        return TaskPriority.MEDIUM;
     }
   }
 
-  onTaskCreated(taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): void {
-    const newTask: Task = {
-      ...taskData,
-      id: 'task-' + Date.now(),
-      comments: [],
-      attachments: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
+  onMessageSent(messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'isRead'>): void {
+    const newMessage: ChatMessage = {
+      ...messageData,
+      id: 'msg-' + Date.now(),
+      timestamp: new Date(),
+      isRead: false
     };
-    this.workspace.tasks.push(newTask);
+    this.workspace.chatMessages.push(newMessage);
+    console.log('💬 Message sent (mock):', newMessage);
   }
 
   onFileUploaded(fileData: Omit<FileAttachment, 'id' | 'uploadedAt'>): void {
-    const newFile: FileAttachment = {
-      ...fileData,
-      id: 'file-' + Date.now(),
-      uploadedAt: new Date()
-    };
-    this.workspace.files.push(newFile);
+    console.log('📁 File upload requested:', fileData);
+    alert('File upload feature will be implemented with the backend API.');
   }
 
   onFileDeleted(fileId: string): void {
-    this.workspace.files = this.workspace.files.filter(file => file.id !== fileId);
+    console.log('🗑️ Deleting file:', fileId);
+    
+    this.fileService.deleteFile(Number(fileId))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          console.log('✅ File deleted from backend');
+          this.backendFiles = this.backendFiles.filter(file => file.id !== Number(fileId));
+          this.mapFilesToWorkspace();
+        },
+        error: (error) => {
+          console.error('❌ Error deleting file:', error);
+          alert('Error deleting file: ' + error);
+        }
+      });
   }
 }

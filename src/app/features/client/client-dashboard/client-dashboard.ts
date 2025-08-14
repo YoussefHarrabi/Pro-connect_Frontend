@@ -31,6 +31,7 @@ import { BudgetType, OfferCreateRequest, OfferDto, OfferService, OfferStatus } f
 // Define OngoingProject interface
 interface OngoingProject {
   id: string;
+  projectId: number; // Add original project ID
   title: string;
   description: string;
   freelancerName: string;
@@ -537,6 +538,7 @@ private loadApplications(): void {
       
       return {
         id: `ongoing-${project.id}`,
+        projectId: project.id, // Store original project ID
         title: project.title,
         description: project.description,
         freelancerName: acceptedApp ? acceptedApp.applicantUsername : project.assignedTalentUsername || 'Assigned Freelancer',
@@ -980,7 +982,7 @@ cancelOffer(offer: OfferDto): void {
   }
 
   // ✅ Navigation methods
-  navigateToWorkspace(projectId: string): void {
+  navigateToWorkspace(projectId: number): void {
     this.router.navigate(['/workspace', projectId]);
   }
 

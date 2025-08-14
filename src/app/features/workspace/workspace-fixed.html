@@ -1,0 +1,306 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Shared Navbar -->
+  <app-shared-navbar [config]="sharedNavbarConfig"></app-shared-navbar>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-4 py-8">
+    
+    <!-- Loading State -->
+    @if (isLoading) {
+      <div class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <span class="ml-2 text-gray-600">{{ 'workspace.loading' | translate }}</span>
+      </div>
+    }
+
+    <!-- Main Workspace Content -->
+    @if (!isLoading && project) {
+      <!-- Project Header -->
+      <div class="bg-white rounded-xl shadow-sm border mb-8 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 class="text-2xl font-bold mb-2">{{ project.title }}</h1>
+              <p class="text-primary-100 mb-4">{{ project.description }}</p>
+              <div class="flex flex-wrap gap-4 text-sm">
+                <div class="flex items-center space-x-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                  <span>{{ 'project.budget' | translate }}: ${{ project.budget }}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span>{{ 'project.deadline' | translate }}: {{ formatDate(project.deadline) }}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span [class]="getProjectStatusColor(project.status)" class="px-2 py-1 rounded-full text-xs font-medium">
+                    {{ project.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Project Statistics -->
+            @if (statistics) {
+              <div class="mt-6 lg:mt-0">
+                <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+                  <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div class="text-2xl font-bold">{{ statistics.projectProgress }}%</div>
+                      <div class="text-xs text-primary-200">{{ 'workspace.progress' | translate }}</div>
+                    </div>
+                    <div>
+                      <div class="text-2xl font-bold">{{ getDaysRemaining() }}</div>
+                      <div class="text-xs text-primary-200">{{ 'workspace.daysLeft' | translate }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (statistics) {
+              <div class="text-right">
+                <button 
+                  (click)="openCompletionModal()" 
+                  class="bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                  {{ 'workspace.markComplete' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        @if (statistics) {
+          <div class="p-4 bg-gray-50 border-b">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700">{{ 'workspace.overallProgress' | translate }}</span>
+              <span class="text-sm text-gray-500">{{ statistics.projectProgress }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                class="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                [style.width.%]="statistics.projectProgress">
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="bg-white rounded-xl shadow-sm border mb-8">
+        <div class="border-b border-gray-200">
+          <nav class="flex space-x-8 px-6" aria-label="Tabs">
+            @for (tab of ['overview', 'tasks', 'files']; track tab) {
+              <button
+                (click)="setActiveTab(tab)"
+                [class]="activeTab === tab 
+                  ? 'border-primary-500 text-primary-600 border-b-2 font-medium py-4 px-1 text-sm flex items-center space-x-2'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 font-medium py-4 px-1 text-sm flex items-center space-x-2'"
+                type="button">
+                
+                @if (tab === 'overview') {
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                }
+                @if (tab === 'tasks') {
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                  </svg>
+                }
+                @if (tab === 'files') {
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                  </svg>
+                }
+                
+                <span>{{ ('workspace.tabs.' + tab) | translate }}</span>
+              </button>
+            }
+          </nav>
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      
+      <!-- Overview Tab -->
+      @if (activeTab === 'overview') {
+        <div class="overview-tab">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Recent Tasks -->
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ 'workspace.recentTasks' | translate }}</h3>
+              
+              @if (tasks.length > 0) {
+                <div class="space-y-4">
+                  @for (task of tasks.slice(0, 5); track task.id) {
+                    <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                      <div class="flex-shrink-0">
+                        <div [class]="getStatusBadgeClass(task.status)" class="w-3 h-3 rounded-full"></div>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">{{ task.title }}</p>
+                        <p class="text-sm text-gray-500">{{ task.description }}</p>
+                        <div class="mt-1 flex items-center space-x-2">
+                          <span [class]="getStatusBadgeClass(task.status)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium">
+                            {{ task.status }}
+                          </span>
+                          @if (task.priority) {
+                            <span [class]="getPriorityBadgeClass(task.priority)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium">
+                              {{ task.priority }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="text-gray-500 text-center py-8">{{ 'workspace.noTasks' | translate }}</p>
+              }
+            </div>
+
+            <!-- Project Statistics -->
+            @if (statistics) {
+              <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ 'workspace.projectStats' | translate }}</h3>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                  <div class="text-center p-4 bg-blue-50 rounded-lg">
+                    <div class="text-2xl font-bold text-blue-600">{{ getTasksByStatus(TaskStatus.TO_DO).length }}</div>
+                    <div class="text-sm text-blue-600">{{ 'task.status.todo' | translate }}</div>
+                  </div>
+                  <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-600">{{ getTasksByStatus(TaskStatus.IN_PROGRESS).length }}</div>
+                    <div class="text-sm text-yellow-600">{{ 'task.status.inprogress' | translate }}</div>
+                  </div>
+                  <div class="text-center p-4 bg-purple-50 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-600">{{ getTasksByStatus(TaskStatus.IN_REVIEW).length }}</div>
+                    <div class="text-sm text-purple-600">{{ 'task.status.review' | translate }}</div>
+                  </div>
+                  <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-600">{{ getTasksByStatus(TaskStatus.DONE).length }}</div>
+                    <div class="text-sm text-green-600">{{ 'task.status.done' | translate }}</div>
+                  </div>
+                </div>
+
+                <div class="space-y-3">
+                  <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">{{ 'project.startDate' | translate }}</span>
+                    <span class="text-sm font-medium">{{ formatDate(project.createdAt) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">{{ 'project.deadline' | translate }}</span>
+                    <span class="text-sm font-medium">{{ formatDate(project.deadline) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">{{ 'workspace.daysRemaining' | translate }}</span>
+                    <span class="text-sm font-medium">{{ getDaysRemaining() }}</span>
+                  </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                  <div class="flex justify-between mb-2">
+                    <span class="text-sm text-gray-600">{{ 'workspace.totalFiles' | translate }}</span>
+                    <span class="text-sm font-medium">{{ files.length }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Tasks Tab -->
+      @if (activeTab === 'tasks') {
+        <div class="tasks-tab bg-white rounded-xl shadow-sm border p-6">
+          <app-task-board
+            [tasks]="tasks"
+            [currentUserRole]="currentUserRole"
+            (taskUpdated)="onTaskUpdated($event)"
+            (taskCreated)="onTaskCreated($event)">
+          </app-task-board>
+        </div>
+      }
+
+      <!-- Files Tab -->
+      @if (activeTab === 'files') {
+        <div class="files-tab bg-white rounded-xl shadow-sm border overflow-hidden" style="height: 600px;">
+          <app-file-manager
+            [files]="files"
+            [currentUserRole]="currentUserRole"
+            (fileUploaded)="onFileUploaded($event)"
+            (fileDeleted)="onFileDeleted($event)">
+          </app-file-manager>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Project Completion Modal -->
+  @if (showCompletionModal) {
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <form [formGroup]="projectCompletionForm" (ngSubmit)="markProjectComplete()">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">{{ 'workspace.completeProject' | translate }}</h3>
+            <button type="button" (click)="closeCompletionModal()" class="text-gray-400 hover:text-gray-600 text-xl">×</button>
+          </div>
+
+          <div class="mb-4">
+            <label for="clientFeedback" class="block text-sm font-medium text-gray-700 mb-2">
+              {{ 'workspace.feedback' | translate }}
+            </label>
+            <textarea
+              id="clientFeedback"
+              formControlName="clientFeedback"
+              rows="4"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              placeholder="{{ 'workspace.feedbackPlaceholder' | translate }}">
+            </textarea>
+          </div>
+
+          <div class="mb-6">
+            <label for="projectRating" class="block text-sm font-medium text-gray-700 mb-2">
+              {{ 'workspace.rating' | translate }}
+            </label>
+            <select
+              id="projectRating"
+              formControlName="projectRating"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+              <option value="1">1 - {{ 'rating.poor' | translate }}</option>
+              <option value="2">2 - {{ 'rating.fair' | translate }}</option>
+              <option value="3">3 - {{ 'rating.good' | translate }}</option>
+              <option value="4">4 - {{ 'rating.verygood' | translate }}</option>
+              <option value="5">5 - {{ 'rating.excellent' | translate }}</option>
+            </select>
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              (click)="closeCompletionModal()"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+              {{ 'common.cancel' | translate }}
+            </button>
+            <button
+              type="submit"
+              [disabled]="!projectCompletionForm.valid"
+              class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed">
+              {{ 'workspace.markComplete' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Shared Footer -->
+  <app-shared-footer></app-shared-footer>
+</div>

@@ -507,4 +507,19 @@ export class ProjectService {
 
     return errors;
   }
+  // ✅ Get projects assigned to current freelancer/talent
+getAssignedProjects(): Observable<ProjectDto[]> {
+  console.log('📡 Fetching projects assigned to current talent');
+  
+  return this.http.get<ProjectDto[]>(`${this.apiUrl}/assigned`, this.getHttpOptions())
+    .pipe(catchError(this.handleError));
+}
+
+// ✅ Get statistics for assigned projects
+getAssignedProjectStats(): Observable<any> {
+  console.log('📡 Fetching assigned project statistics');
+  
+  return this.http.get<any>(`${this.apiUrl}/assigned/stats`, this.getHttpOptions())
+    .pipe(catchError(this.handleError));
+}
 }
